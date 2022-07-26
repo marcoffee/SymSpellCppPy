@@ -208,7 +208,7 @@ public:
         }
     }
 
-    int Add(T &value) {
+    int Add(T &&value) {
         if (Count == Capacity()) {
             Values.push_back(std::vector<T>());
             Values[Values.size() - 1].resize(ChunkSize);
@@ -238,12 +238,18 @@ class Node {
 public:
     xstring suggestion;
     int next;
+
+    Node (const xstring &suggestion = {}, const int next = -1)
+    : suggestion(suggestion), next(next) {}
 };
 
 class Entry {
 public:
     int count;
     int first;
+
+    Entry (int const count = 0, const int first = -1)
+    : count(count), first(first) {}
 };
 
 class SuggestionStage {
@@ -266,20 +272,14 @@ public:
         Nodes.Clear();
     }
 
-    void Add(int deleteHash, xstring suggestion) {
-        auto deletesFinded = Deletes.find(deleteHash);
-        Entry newEntry{};
-        newEntry.count = 0;
-        newEntry.first = -1;
-        Entry entry = (deletesFinded == Deletes.end()) ? newEntry : deletesFinded->second;
-        int next = entry.first;
+    void Add(int deleteHash, const xstring &suggestion) {
+        Entry& entry = Deletes.emplace(deleteHash, 0).first->second;
+        int const next = entry.first;  // 1st semantic errors, this should not be Nodes.Count
+
         entry.count++;
         entry.first = Nodes.Count;
-        Deletes[deleteHash] = entry;
-        Node item;
-        item.suggestion = std::move(suggestion);
-        item.next = next; // 1st semantic errors, this should not be Nodes.Count
-        Nodes.Add(item);
+
+        Nodes.Add(Node(suggestion, next));
     }
 
     void CommitTo(std::shared_ptr<std::unordered_map<int, std::vector<xstring>>> permanentDeletes) {
