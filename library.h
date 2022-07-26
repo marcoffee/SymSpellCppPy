@@ -229,8 +229,8 @@ namespace symspellcpppy {
 
         static std::vector<xstring> ParseWords(const xstring &text);
 
-        std::shared_ptr<std::unordered_set<xstring>>
-        Edits(const xstring &word, int editDistance, std::shared_ptr<std::unordered_set<xstring>> deleteWords);
+        void
+        Edits(const xstring &word, int editDistance, std::shared_ptr<std::unordered_set<xstring>>& deleteWords);
 
         std::shared_ptr<std::unordered_set<xstring>> EditsPrefix(const xstring& key);
 

@@ -460,19 +460,23 @@ namespace symspellcpppy {
         return matches;
     }
 
-    std::shared_ptr<std::unordered_set<xstring>>
-    SymSpell::Edits(const xstring &word, int editDistance, std::shared_ptr<std::unordered_set<xstring>> deleteWords) {
+    void
+    SymSpell::Edits(const xstring &word, int editDistance, std::shared_ptr<std::unordered_set<xstring>>& deleteWords) {
         editDistance++;
+
         if (word.size() > 1) {
+            xstring del;
+            del.reserve(word.size());
+
             for (int i = 0; i < word.size(); i++) {
-                xstring temp(word);
-                xstring del = temp.erase(i, 1);
+                del.assign(word);
+                del.erase(i, 1);
+
                 if (deleteWords->insert(del).second) {
                     if (editDistance < maxDictionaryEditDistance) Edits(del, editDistance, deleteWords);
                 }
             }
         }
-        return deleteWords;
     }
 
     std::shared_ptr<std::unordered_set<xstring>> SymSpell::EditsPrefix(const xstring& key) {
