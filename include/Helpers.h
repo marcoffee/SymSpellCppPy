@@ -282,9 +282,9 @@ public:
         Nodes.Add(Node(suggestion, next));
     }
 
-    void CommitTo(std::shared_ptr<std::unordered_map<int, std::vector<xstring>>> permanentDeletes) {
+    void CommitTo(std::unordered_map<int, std::vector<xstring>> &permanentDeletes) {
         for (auto &Delete : Deletes) {
-            auto& suggestions = permanentDeletes->emplace(Delete.first, 0).first->second;
+            auto& suggestions = permanentDeletes.emplace(Delete.first, 0).first->second;
             suggestions.reserve(suggestions.size() + Delete.second.count);
 
             for (int next = Delete.second.first; next >= 0;) {

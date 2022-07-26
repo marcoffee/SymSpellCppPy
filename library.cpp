@@ -27,7 +27,7 @@ namespace symspellcpppy {
     }
 
     int SymSpell::EntryCount() {
-        return deletes == nullptr ? 0 : deletes->size();
+        return deletes.size();
     }
 
     SymSpell::SymSpell(int _maxDictionaryEditDistance, int _prefixLength, int _countThreshold, int _initialCapacity,
@@ -92,12 +92,8 @@ namespace symspellcpppy {
                 staging->Add(GetstringHash(edit), key);
             }
         } else {
-            if (deletes == nullptr) {
-                deletes = std::make_shared<std::unordered_map<int, std::vector<xstring>>>(edits->size());
-            }
-
             for (auto it = edits->cbegin(); it != edits->cend(); ++it) {
-                deletes->emplace(GetstringHash(*it), 0).first->second.emplace_back(key);
+                deletes.emplace(GetstringHash(*it), 0).first->second.emplace_back(key);
             }
         }
 
@@ -118,8 +114,8 @@ namespace symspellcpppy {
             auto edits = EditsPrefix(key);
             for (const auto &edit: *edits) {
                 int deleteHash = GetstringHash(edit);
-                auto deletesFinded = deletes->find(deleteHash);
-                if (deletesFinded != deletes->end()) {
+                auto deletesFinded = deletes.find(deleteHash);
+                if (deletesFinded != deletes.end()) {
                     auto delete_vec = deletesFinded->second;
                     auto it = std::find(delete_vec.begin(), delete_vec.end(), key);
                     if (it < delete_vec.end()) delete_vec.erase(it);
@@ -256,8 +252,8 @@ namespace symspellcpppy {
     }
 
     void SymSpell::CommitStaged(const std::shared_ptr<SuggestionStage> &staging) {
-        if (deletes == nullptr)
-            deletes = std::make_shared<std::unordered_map<int, std::vector<xstring>>>(staging->DeleteCount());
+        if (deletes.empty())
+            deletes.reserve(staging->DeleteCount());
         staging->CommitTo(deletes);
     }
 
@@ -276,7 +272,7 @@ namespace symspellcpppy {
     std::vector<SuggestItem>
     SymSpell::Lookup(const xstring& original_input, Verbosity verbosity, int maxEditDistance, bool includeUnknown,
                      bool transferCasing) {
-        if (deletes == nullptr) return std::vector<SuggestItem> {}; // Dictionary is empty
+        if (deletes.empty()) return std::vector<SuggestItem> {}; // Dictionary is empty
 
         int skip = 0;
         if (maxEditDistance > maxDictionaryEditDistance) throw std::invalid_argument("Distance too large");
@@ -329,10 +325,10 @@ namespace symspellcpppy {
                     break;
                 }
 
-                auto deletes_found = deletes->find(GetstringHash(candidate));
+                auto deletes_found = deletes.find(GetstringHash(candidate));
 
                 //read candidate entry from std::unordered_map
-                if (deletes_found != deletes->end()) {
+                if (deletes_found != deletes.end()) {
                     for (const xstring& suggestion : deletes_found->second) {
                         int suggestionLen = suggestion.size();
                         if (suggestion == input) continue;

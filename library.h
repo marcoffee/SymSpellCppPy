@@ -108,7 +108,7 @@ namespace symspellcpppy {
         int compactMask;
         DistanceAlgorithm distanceAlgorithm = DistanceAlgorithm::DamerauOSADistance;
         int maxDictionaryWordLength; //maximum std::unordered_map term length
-        std::shared_ptr<std::unordered_map<int, std::vector<xstring>>> deletes;
+        std::unordered_map<int, std::vector<xstring>> deletes;
         std::unordered_map<xstring, int64_t> words;
         std::unordered_map<xstring, int64_t> belowThresholdWords;
 
