@@ -92,24 +92,13 @@ namespace symspellcpppy {
                 staging->Add(GetstringHash(edit), key);
             }
         } else {
-
-            for (const auto &edit : *edits) {
-                int deleteHash = GetstringHash(edit);
-                auto deletesFinded = deletes->find(deleteHash);
-                std::vector<xstring> suggestions;
-                if (deletesFinded != deletes->end()) {
-                    suggestions = deletesFinded->second;
-                    std::vector<xstring> newSuggestions;
-                    newSuggestions.reserve(suggestions.size() + 1);
-                    std::copy(suggestions.begin(), suggestions.end(), std::back_inserter(newSuggestions));
-                    deletes->at(deleteHash) = suggestions = newSuggestions;
-                } else {
-                    suggestions = std::vector<xstring>(1);
-                    deletes->insert(std::pair<int, std::vector<xstring>>(deleteHash, suggestions));
-                }
-                suggestions[suggestions.size() - 1] = key;
+            if (deletes == nullptr) {
+                deletes = std::make_shared<std::unordered_map<int, std::vector<xstring>>>(edits->size());
             }
 
+            for (auto it = edits->cbegin(); it != edits->cend(); ++it) {
+                deletes->emplace(GetstringHash(*it), 0).first->second.emplace_back(key);
+            }
         }
 
         return true;

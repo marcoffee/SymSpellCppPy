@@ -283,33 +283,15 @@ public:
     }
 
     void CommitTo(std::shared_ptr<std::unordered_map<int, std::vector<xstring>>> permanentDeletes) {
-        auto permanentDeletesEnd = permanentDeletes->end();
         for (auto &Delete : Deletes) {
-            auto permanentDeletesFinded = permanentDeletes->find(Delete.first);
-            std::vector<xstring> suggestions;
-            int i;
-            if (permanentDeletesFinded != permanentDeletesEnd) {
-                suggestions = permanentDeletesFinded->second;
-                i = suggestions.size();
+            auto& suggestions = permanentDeletes->emplace(Delete.first, 0).first->second;
+            suggestions.reserve(suggestions.size() + Delete.second.count);
 
-                std::vector<xstring> newSuggestions;
-                newSuggestions.reserve(suggestions.size() + Delete.second.count);
-                std::copy(suggestions.begin(), suggestions.end(), back_inserter(newSuggestions));
-                suggestions = newSuggestions;
-            } else {
-                i = 0;
-                int32_t count = Delete.second.count;
-                suggestions.reserve(count);
-            }
-
-            int next = Delete.second.first;
-            while (next >= 0) {
-                auto node = Nodes.At(next);
+            for (int next = Delete.second.first; next >= 0;) {
+                auto const& node = Nodes.At(next);
                 suggestions.push_back(node.suggestion);
                 next = node.next;
-                ++i;
             }
-            (*permanentDeletes)[Delete.first] = suggestions;
         }
     }
 };
