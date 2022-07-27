@@ -603,9 +603,10 @@ namespace symspellcpppy {
                                 }
 
                                 suggestionSplit.distance = distance2;
-                                if (bigrams.count(suggestionSplit.term) > 0) {
-                                    long bigramCount = bigrams.at(suggestionSplit.term);
-                                    suggestionSplit.count = bigramCount;
+                                auto bigram_it = bigrams.find(suggestionSplit.term);
+
+                                if (bigram_it != bigrams.end()) {
+                                    suggestionSplit.count = bigram_it->second;
                                     if (!suggestions.empty()) {
                                         if ((suggestions1[0].term + suggestions2[0].term == termList1[i])) {
                                             suggestionSplit.count = std::max(suggestionSplit.count,
