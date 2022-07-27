@@ -89,11 +89,11 @@ namespace symspellcpppy {
         //create deletes
         auto edits = EditsPrefix(key);
         if (staging != nullptr) {
-            for (const auto &edit : *edits) {
+            for (const auto &edit : edits) {
                 staging->Add(GetstringHash(edit), key);
             }
         } else {
-            for (auto it = edits->cbegin(); it != edits->cend(); ++it) {
+            for (auto it = edits.cbegin(); it != edits.cend(); ++it) {
                 deletes.emplace(GetstringHash(*it), 0).first->second.emplace_back(key);
             }
         }
@@ -113,7 +113,7 @@ namespace symspellcpppy {
                 maxDictionaryWordLength = max_size;
             }
             auto edits = EditsPrefix(key);
-            for (const auto &edit: *edits) {
+            for (const auto &edit: edits) {
                 int deleteHash = GetstringHash(edit);
                 auto deletesFinded = deletes.find(deleteHash);
                 if (deletesFinded != deletes.end()) {
@@ -459,7 +459,7 @@ namespace symspellcpppy {
     }
 
     void
-    SymSpell::Edits(const xstring &word, int editDistance, std::shared_ptr<std::unordered_set<xstring>>& deleteWords) {
+    SymSpell::Edits(const xstring &word, int editDistance, std::unordered_set<xstring>& deleteWords) {
         editDistance++;
 
         if (word.size() > 1) {
@@ -470,22 +470,23 @@ namespace symspellcpppy {
                 del.assign(word);
                 del.erase(i, 1);
 
-                if (deleteWords->insert(del).second) {
+                if (deleteWords.insert(del).second) {
                     if (editDistance < maxDictionaryEditDistance) Edits(del, editDistance, deleteWords);
                 }
             }
         }
     }
 
-    std::shared_ptr<std::unordered_set<xstring>> SymSpell::EditsPrefix(const xstring& key) {
-        auto m = std::make_shared<std::unordered_set<xstring>>();
-        if (key.size() <= maxDictionaryEditDistance) m->insert(XL(""));
+    std::unordered_set<xstring> SymSpell::EditsPrefix(const xstring& key) {
+        std::unordered_set<xstring> m;
+
+        if (key.size() <= maxDictionaryEditDistance) m.insert(XL(""));
         if (key.size() > prefixLength) {
             const xstring sub_key = key.substr(0, prefixLength);
-            m->insert(sub_key);
+            m.insert(sub_key);
             Edits(sub_key, 0, m);
         } else {
-            m->insert(key);
+            m.insert(key);
             Edits(key, 0, m);
         }
         return m;

@@ -232,9 +232,9 @@ namespace symspellcpppy {
         static std::vector<xstring> ParseWords(const xstring &text);
 
         void
-        Edits(const xstring &word, int editDistance, std::shared_ptr<std::unordered_set<xstring>>& deleteWords);
+        Edits(const xstring &word, int editDistance, std::unordered_set<xstring>& deleteWords);
 
-        std::shared_ptr<std::unordered_set<xstring>> EditsPrefix(const xstring& key);
+        std::unordered_set<xstring> EditsPrefix(const xstring& key);
 
         int GetstringHash(const xstring& s) const;
 
