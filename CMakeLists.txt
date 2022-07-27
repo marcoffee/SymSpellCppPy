@@ -9,9 +9,6 @@ set(CMAKE_BUILD_TYPE "Release")
 option(BUILD_FOR_PYTHON "Build for Python" OFF)
 option(BUILD_FOR_TEST "Build Tests" ON)
 
-add_library(SymSpellCpp STATIC library.cpp library.h)
-target_include_directories(SymSpellCpp PUBLIC ${CMAKE_SOURCE_DIR}/include)
-
 if (BUILD_FOR_PYTHON)
     set(CMAKE_BUILD_TYPE "Release")
     Include(FetchContent)
@@ -22,8 +19,10 @@ if (BUILD_FOR_PYTHON)
             GIT_TAG v2.10.1)
     FetchContent_MakeAvailable(pybind11)
     pybind11_add_module(SymSpellCppPy MODULE SymSpellCppPy.cpp)
+
     target_sources(SymSpellCppPy PRIVATE library.cpp library.h)
-    target_link_libraries(SymSpellCppPy PRIVATE SymSpellCpp)
+    target_include_directories(SymSpellCppPy PUBLIC ${CMAKE_SOURCE_DIR}/include)
+
     target_compile_options(SymSpellCppPy PRIVATE
             $<$<CONFIG:Release>:-O3 -DNDEBUG -march=native -mtune=native -fvisibility=hidden
             -flto -ffat-lto-objects>)
