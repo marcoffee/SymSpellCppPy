@@ -686,8 +686,7 @@ namespace symspellcpppy {
                 }
 
                 topEd += part.size();
-                xregex r(XL(" "));
-                part = regex_replace(part, r, XL(""));
+                part.erase(std::remove(part.begin(), part.end(), XL(' ')), part.end());
                 topEd -= part.size();
 
                 //v6.7
