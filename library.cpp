@@ -5,6 +5,7 @@
 #include <fstream>
 
 namespace symspellcpppy {
+    const xregex SymSpell::wordsRegex(XL("['’\\w\\-\\[_\\]]+"), std::regex_constants::optimize);
 
     int SymSpell::MaxDictionaryEditDistance() const {
         return maxDictionaryEditDistance;
@@ -444,15 +445,16 @@ namespace symspellcpppy {
     }
 
     std::vector<xstring> SymSpell::ParseWords(const xstring &text) {
-        xregex r(XL("['’\\w\\-\\[_\\]]+"));
         xsmatch m;
         std::vector<xstring> matches;
         xstring::const_iterator ptr(text.cbegin());
-        while (regex_search(ptr, text.cend(), m, r)) {
+
+        while (regex_search(ptr, text.cend(), m, wordsRegex)) {
             xstring matchLower = Helpers::string_lower(m[0]);
             matches.push_back(matchLower);
             ptr = m.suffix().first;
         }
+
         return matches;
     }
 

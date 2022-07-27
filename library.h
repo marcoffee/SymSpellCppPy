@@ -112,6 +112,8 @@ namespace symspellcpppy {
         std::unordered_map<xstring, int64_t> words;
         std::unordered_map<xstring, int64_t> belowThresholdWords;
 
+        static const xregex wordsRegex;
+
     public:
         int MaxDictionaryEditDistance() const;
 
