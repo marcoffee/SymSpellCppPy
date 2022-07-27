@@ -114,6 +114,8 @@ namespace symspellcpppy {
 
         static const xregex wordsRegex;
 
+        bool CreateDictionaryEntryCheck(const xstring &key, int64_t count);
+
     public:
         int MaxDictionaryEditDistance() const;
 
@@ -141,7 +143,8 @@ namespace symspellcpppy {
                           int initialCapacity = DEFAULT_INITIAL_CAPACITY,
                           unsigned char compactLevel = DEFAULT_COMPACT_LEVEL);
 
-        bool CreateDictionaryEntry(const xstring &key, int64_t count, const std::shared_ptr<SuggestionStage> &staging);
+        bool CreateDictionaryEntry(const xstring &key, int64_t count);
+        bool CreateDictionaryEntry(const xstring &key, int64_t count, SuggestionStage &staging);
 
         bool DeleteDictionaryEntry(const xstring &key);
 
@@ -187,7 +190,7 @@ namespace symspellcpppy {
         /// a corpus using CreateDictionary.</remarks>
         void PurgeBelowThresholdWords();
 
-        void CommitStaged(const std::shared_ptr<SuggestionStage> &staging);
+        void CommitStaged(SuggestionStage &staging);
 
         /// <summary>Find suggested spellings for a given input word, using the maximum
         /// edit distance specified during construction of the SymSpell dictionary.</summary>

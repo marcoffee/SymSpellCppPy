@@ -52,9 +52,7 @@ namespace symspellcpppy {
         words = std::unordered_map<xstring, int64_t>(initialCapacity);
     }
 
-    bool SymSpell::CreateDictionaryEntry(const xstring &key, int64_t count,
-                                         const std::shared_ptr<SuggestionStage> &staging) {
-
+    bool SymSpell::CreateDictionaryEntryCheck(const xstring &key, int64_t count) {
         if (count <= 0) {
             if (countThreshold > 0)
                 return false; // no point doing anything if count is zero, as it can't change anything
@@ -77,25 +75,46 @@ namespace symspellcpppy {
             count = (MAXINT - countPrevious > count) ? countPrevious + count : MAXINT;
             words.at(key) = count;
             return false;
-        } else if (count < CountThreshold()) {
+        } else if (count < countThreshold) {
             belowThresholdWords[key] = count;
             return false;
         }
 
         words.insert(std::pair<xstring, int64_t>(key, count));
 
-        if (key.size() > maxDictionaryWordLength) maxDictionaryWordLength = key.size();
+        if (key.size() > maxDictionaryWordLength)
+            maxDictionaryWordLength = key.size();
+
+        return true;
+    }
+
+    bool SymSpell::CreateDictionaryEntry(const xstring &key, int64_t count) {
+        if (!CreateDictionaryEntryCheck(key, count)) {
+            return false;
+        }
 
         //create deletes
         auto edits = EditsPrefix(key);
-        if (staging != nullptr) {
-            for (const auto &edit : edits) {
-                staging->Add(GetstringHash(edit), key);
-            }
-        } else {
-            for (auto it = edits.cbegin(); it != edits.cend(); ++it) {
-                deletes.emplace(GetstringHash(*it), 0).first->second.emplace_back(key);
-            }
+
+        //store deletes
+        for (auto it = edits.cbegin(); it != edits.cend(); ++it) {
+            deletes.emplace(GetstringHash(*it), 0).first->second.emplace_back(key);
+        }
+
+        return true;
+    }
+
+    bool SymSpell::CreateDictionaryEntry(const xstring &key, int64_t count, SuggestionStage &staging) {
+        if (!CreateDictionaryEntryCheck(key, count)) {
+            return false;
+        }
+
+        //create deletes
+        auto edits = EditsPrefix(key);
+
+        //stage deletes
+        for (auto it = edits.cbegin(); it != edits.cend(); ++it) {
+            staging.Add(GetstringHash(*it), key);
         }
 
         return true;
@@ -190,7 +209,7 @@ namespace symspellcpppy {
     }
 
     bool SymSpell::LoadDictionary(xifstream &corpusStream, int termIndex, int countIndex, xchar separatorChars) {
-        auto staging = std::make_shared<SuggestionStage>(16384);
+        SuggestionStage staging(16384);
         xstring line;
         int i = 0;
         int start, end;
@@ -235,7 +254,7 @@ namespace symspellcpppy {
 
     bool SymSpell::CreateDictionary(xifstream &corpusStream) {
         xstring line;
-        auto staging = std::make_shared<SuggestionStage>(16384);
+        SuggestionStage staging(16384);
         while (getline(corpusStream, line)) {
             for (const xstring &key : ParseWords(line)) {
                 CreateDictionaryEntry(key, 1, staging);
@@ -252,10 +271,10 @@ namespace symspellcpppy {
         belowThresholdWords.clear();
     }
 
-    void SymSpell::CommitStaged(const std::shared_ptr<SuggestionStage> &staging) {
+    void SymSpell::CommitStaged(SuggestionStage &staging) {
         if (deletes.empty())
-            deletes.reserve(staging->DeleteCount());
-        staging->CommitTo(deletes);
+            deletes.reserve(staging.DeleteCount());
+        staging.CommitTo(deletes);
     }
 
     std::vector<SuggestItem> SymSpell::Lookup(const xstring& input, Verbosity verbosity) {

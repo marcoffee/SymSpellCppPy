@@ -90,7 +90,7 @@ PYBIND11_MODULE(SymSpellCppPy, m) {
             .def("count_threshold", &symspellcpppy::SymSpell::CountThreshold,
                  "Frequency of word so that its considered a valid word for spelling correction.")
             .def("create_dictionary_entry", [](symspellcpppy::SymSpell &sym, const xstring &key, int64_t count) {
-                auto staging = std::make_shared<SuggestionStage>(128);
+                SuggestionStage staging(128);
                 sym.CreateDictionaryEntry(Helpers::string_lower(key), count, staging);
                 sym.CommitStaged(staging);
                 return sym.EntryCount() > 0;
