@@ -89,12 +89,9 @@ PYBIND11_MODULE(SymSpellCppPy, m) {
             .def("entry_count", &symspellcpppy::SymSpell::EntryCount, "Total number of deletes formed.")
             .def("count_threshold", &symspellcpppy::SymSpell::CountThreshold,
                  "Frequency of word so that its considered a valid word for spelling correction.")
-            .def("create_dictionary_entry", [](symspellcpppy::SymSpell &sym, const xstring &key, int64_t count) {
-                SuggestionStage staging(128);
-                sym.CreateDictionaryEntry(Helpers::string_lower(key), count, staging);
-                sym.CommitStaged(staging);
-                return sym.EntryCount() > 0;
-            }, "Create/Update an entry in the dictionary.", py::arg("key"), py::arg("count"))
+            .def("create_dictionary_entry", py::overload_cast<const std::string &, int64_t>(
+                    &symspellcpppy::SymSpell::CreateDictionaryEntry),
+                 "Create/Update an entry in the dictionary.", py::arg("key"), py::arg("count"))
             .def("delete_dictionary_entry", &symspellcpppy::SymSpell::DeleteDictionaryEntry,
                  "Delete the key from the dictionary & updates internal representation accordingly.",
                  py::arg("key"))
