@@ -734,36 +734,37 @@ namespace symspellcpppy {
 
                 int destinationIndex = ((i + circularIndex) % arraySize);
 
-                auto circular_distance = compositions[circularIndex].getDistance();
-                auto destination_distance = compositions[destinationIndex].getDistance();
-                auto circular_probablity = compositions[circularIndex].getProbability();
-                auto destination_probablity = compositions[destinationIndex].getProbability();
-
                 if (j == 0) {
                     compositions[destinationIndex].set(part, topResult, topEd, topProbabilityLog);
-                } else if ((i == maxSegmentationWordLength)
-                           || (((circular_distance + topEd == destination_distance)
-                                || (circular_distance + separatorLength + topEd == destination_distance))
-                               && (destination_probablity < circular_probablity + topProbabilityLog))
-                           || (circular_distance + separatorLength + topEd < destination_distance)) {
-                    //v6.7
-                    //keep punctuation or spostrophe adjacent to previous word
-                    if (((topResult.size() == 1) && (is_xpunct(topResult[0]) > 0)) || ((topResult.size() == 2) &&
-                                                                                       (topResult.rfind(XL("’"), 0) ==
-                                                                                        0))) {
-                        xstring seg = compositions[circularIndex].getSegmented() + part;
-                        xstring correct = compositions[circularIndex].getCorrected() + topResult;
-                        int d = circular_distance + topEd;
-                        double prob = circular_probablity + topProbabilityLog;
-                        compositions[destinationIndex].set(seg, correct, d, prob);
-                    } else {
-                        xstring seg = compositions[circularIndex].getSegmented() + XL(" ") + part;
-                        xstring correct = compositions[circularIndex].getCorrected() + XL(" ") + topResult;
-                        int d = circular_distance + separatorLength + topEd;
-                        double prob = circular_probablity + topProbabilityLog;
-                        compositions[destinationIndex].set(seg, correct, d, prob);
-                    }
+                } else {
+                    auto circular_distance = compositions[circularIndex].getDistance();
+                    auto destination_distance = compositions[destinationIndex].getDistance();
+                    auto circular_probablity = compositions[circularIndex].getProbability();
+                    auto destination_probablity = compositions[destinationIndex].getProbability();
 
+                    if ((i == maxSegmentationWordLength)
+                        || (((circular_distance + topEd == destination_distance)
+                            || (circular_distance + separatorLength + topEd == destination_distance))
+                            && (destination_probablity < circular_probablity + topProbabilityLog))
+                        || (circular_distance + separatorLength + topEd < destination_distance)) {
+                        //v6.7
+                        //keep punctuation or spostrophe adjacent to previous word
+                        if (((topResult.size() == 1) && (is_xpunct(topResult[0]) > 0)) || ((topResult.size() == 2) &&
+                                                                                        (topResult.rfind(XL("’"), 0) ==
+                                                                                            0))) {
+                            xstring seg = compositions[circularIndex].getSegmented() + part;
+                            xstring correct = compositions[circularIndex].getCorrected() + topResult;
+                            int d = circular_distance + topEd;
+                            double prob = circular_probablity + topProbabilityLog;
+                            compositions[destinationIndex].set(seg, correct, d, prob);
+                        } else {
+                            xstring seg = compositions[circularIndex].getSegmented() + XL(" ") + part;
+                            xstring correct = compositions[circularIndex].getCorrected() + XL(" ") + topResult;
+                            int d = circular_distance + separatorLength + topEd;
+                            double prob = circular_probablity + topProbabilityLog;
+                            compositions[destinationIndex].set(seg, correct, d, prob);
+                        }
+                    }
                 }
             }
             circularIndex++;
