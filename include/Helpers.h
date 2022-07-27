@@ -183,57 +183,6 @@ public:
     }
 };
 
-template<class T>
-class ChunkArray {
-private:
-    const int ChunkSize = 4096; //this must be a power of 2, otherwise can't optimize Row and Col functions
-    const int DivShift = 12; // number of bits to shift right to do division by ChunkSize (the bit position of ChunkSize)
-    int Row(unsigned int index) { return index >> DivShift; } // same as index / ChunkSize
-    int Col(unsigned int index) { return index & (ChunkSize - 1); } //same as index % ChunkSize
-    int Capacity() { return Values.size() * ChunkSize; }
-
-public:
-    std::vector<std::vector<T>> Values;
-    int Count;
-
-    ChunkArray() {
-        Count = 0;
-    }
-
-    void Reserve(int initialCapacity) {
-        int chunks = (initialCapacity + ChunkSize - 1) / ChunkSize;
-        Values.resize(chunks);
-        for (int i = 0; i < chunks; ++i) {
-            Values[i].resize(ChunkSize);
-        }
-    }
-
-    int Add(T &&value) {
-        if (Count == Capacity()) {
-            Values.push_back(std::vector<T>());
-            Values[Values.size() - 1].resize(ChunkSize);
-        }
-
-        int row = Row(Count);
-        int col = Col(Count);
-
-        Values[row][col] = value;
-        return Count++;
-    }
-
-    void Clear() {
-        Count = 0;
-    }
-
-    T &At(unsigned int index) {
-        return Values[Row(index)][Col(index)];
-    }
-
-    void Set(unsigned int index, T &value) {
-        Values[Row(index)][Col(index)] = value;
-    }
-};
-
 class Node {
 public:
     xstring suggestion;
@@ -255,21 +204,20 @@ public:
 class SuggestionStage {
 private:
     std::unordered_map<int, Entry> Deletes;
-    ChunkArray<Node> Nodes;
+    std::deque<Node> Nodes;
 
 public:
     explicit SuggestionStage(int initialCapacity) {
         Deletes.reserve(initialCapacity);
-        Nodes.Reserve(initialCapacity * 2);
     }
 
     int DeleteCount() { return Deletes.size(); }
 
-    int NodeCount() const { return Nodes.Count; }
+    int NodeCount() const { return Nodes.size(); }
 
     void Clear() {
         Deletes.clear();
-        Nodes.Clear();
+        Nodes.clear();
     }
 
     void Add(int deleteHash, const xstring &suggestion) {
@@ -277,9 +225,9 @@ public:
         int const next = entry.first;  // 1st semantic errors, this should not be Nodes.Count
 
         entry.count++;
-        entry.first = Nodes.Count;
+        entry.first = Nodes.size();
 
-        Nodes.Add(Node(suggestion, next));
+        Nodes.emplace_back(suggestion, next);
     }
 
     void CommitTo(std::unordered_map<int, std::vector<xstring>> &permanentDeletes) {
@@ -288,7 +236,7 @@ public:
             suggestions.reserve(suggestions.size() + Delete.second.count);
 
             for (int next = Delete.second.first; next >= 0;) {
-                auto const& node = Nodes.At(next);
+                auto const& node = Nodes[next];
                 suggestions.push_back(node.suggestion);
                 next = node.next;
             }
