@@ -18,6 +18,10 @@ PYBIND11_MODULE(SymSpellCppPy, m) {
            symspell
     )pbdoc";
 
+    py::enum_<DistanceAlgorithm>(m, "DistanceAlgorithm")
+            .value("LevenshteinDistance", DistanceAlgorithm::LevenshteinDistance)
+            .value("DamerauOSADistance", DistanceAlgorithm::DamerauOSADistance);
+
     py::class_<symspellcpppy::Info>(m, "Info")
             .def(py::init<>())
             .def("set", &symspellcpppy::Info::set, "Set Info properties", py::arg("segmented_string"),
@@ -89,6 +93,7 @@ PYBIND11_MODULE(SymSpellCppPy, m) {
             .def("entry_count", &symspellcpppy::SymSpell::EntryCount, "Total number of deletes formed.")
             .def("count_threshold", &symspellcpppy::SymSpell::CountThreshold,
                  "Frequency of word so that its considered a valid word for spelling correction.")
+            .def("distance_algorithm", &symspellcpppy::SymSpell::GetDistanceAlgorithm, "Distance algorithm used.")
             .def("create_dictionary_entry", py::overload_cast<const std::string &, int64_t>(
                     &symspellcpppy::SymSpell::CreateDictionaryEntry),
                  "Create/Update an entry in the dictionary.", py::arg("key"), py::arg("count"))

@@ -23,6 +23,10 @@ namespace symspellcpppy {
         return countThreshold;
     }
 
+    DistanceAlgorithm SymSpell::GetDistanceAlgorithm() const {
+        return distanceAlgorithm;
+    }
+
     int SymSpell::WordCount() const {
         return words.size();
     }

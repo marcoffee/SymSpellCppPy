@@ -131,6 +131,8 @@ namespace symspellcpppy {
 
         long CountThreshold() const;
 
+        DistanceAlgorithm GetDistanceAlgorithm() const;
+
         int WordCount() const;
 
         int EntryCount() const;
