@@ -13,14 +13,8 @@
 #endif
 
 #ifdef UNICODE_SUPPORT
-#	define xstring std::wstring
-#	define xstring_view std::wstring_view
-#	define xchar wchar_t
-#	define xifstream std::wifstream
-#	define xstringstream std::wstringstream
+using xchar = wchar_t;
 #	define isxspace std::iswspace
-#	define xregex std::wregex
-#	define xsmatch std::match_results<xchar const*>
 #	define to_xstring std::to_wstring
 #	define XL(x) L##x
 #	define xcout std::wcout
@@ -29,14 +23,8 @@
 #   define is_xupper std::iswupper
 #   define is_xpunct std::iswpunct
 #else
-#	define xstring std::string
-#	define xstring_view std::string_view
-#	define xchar char
-#	define xifstream std::ifstream
-#	define xstringstream std::stringstream
+using xchar = char;
 #	define isxspace std::isspace
-#	define xregex std::regex
-#	define xsmatch std::match_results<xchar const*>
 #	define to_xstring std::to_string
 #	define XL(x) x
 #	define xcout std::cout
@@ -45,3 +33,10 @@
 #   define is_xupper std::isupper
 #   define is_xpunct std::ispunct
 #endif
+
+using xstring = std::basic_string<xchar>;
+using xstring_view = std::basic_string_view<xchar>;
+using xifstream = std::basic_ifstream<xchar>;
+using xstringstream = std::basic_stringstream<xchar>;
+using xregex = std::basic_regex<xchar>;
+using xsmatch = std::match_results<xchar const*>;
