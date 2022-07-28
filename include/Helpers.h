@@ -7,13 +7,32 @@
 #include <sys/stat.h>
 #include <type_traits>
 #include <utility>
-#include "iostream"
+#include <iostream>
 #include "tsl/robin-map/robin_map.h"
 #include "Defines.h"
+
 #define DIFFLIB_ENABLE_EXTERN_MACROS
 #include <difflib.h>
 
 DIFFLIB_INSTANTIATE_FOR_TYPE(xstring);
+
+template <typename>
+struct is_std_vector : std::false_type {};
+
+template <typename T, typename A>
+struct is_std_vector<std::vector<T, A>> : std::true_type {};
+
+template <typename>
+struct is_std_string : std::false_type {};
+
+template <typename T>
+struct is_std_string<std::basic_string<T>> : std::true_type {};
+
+template <typename>
+struct is_std_pair : std::false_type {};
+
+template <typename T, typename A>
+struct is_std_pair<std::pair<T, A>> : std::true_type {};
 
 class DifflibOptions {
 public:

@@ -1,16 +1,6 @@
 #pragma once
 
 //#define UNICODE_SUPPORT
-#define DEFAULT_SEPARATOR_CHAR XL(' ')
-#define DEFAULT_MAX_EDIT_DISTANCE 2
-#define DEFAULT_PREFIX_LENGTH 7
-#define DEFAULT_COUNT_THRESHOLD 1
-#define DEFAULT_INITIAL_CAPACITY 82765
-#define DEFAULT_COMPACT_LEVEL 5
-#define DEFAULT_DISTANCE_ALGORITHM DistanceAlgorithm::DamerauOSADistance
-#define min3(a, b, c) (min(a, min(b, c)))
-#define MAXINT LLONG_MAX
-#define MAXLONG MAXINT
 
 #include <fstream>
 #include <sstream>
@@ -33,6 +23,16 @@
 #include "include/Defines.h"
 #include "include/Helpers.h"
 #include "include/EditDistance.h"
+
+constexpr auto DEFAULT_SEPARATOR_CHAR = XL(' ');
+constexpr auto DEFAULT_MAX_EDIT_DISTANCE = 2;
+constexpr auto DEFAULT_PREFIX_LENGTH = 7;
+constexpr auto DEFAULT_COUNT_THRESHOLD = 1;
+constexpr auto DEFAULT_INITIAL_CAPACITY = 82765;
+constexpr auto DEFAULT_COMPACT_LEVEL = 5;
+constexpr auto DEFAULT_DISTANCE_ALGORITHM = DistanceAlgorithm::DamerauOSADistance;
+constexpr auto MAXINT = LLONG_MAX;
+constexpr auto MAXLONG = MAXINT;
 
 // SymSpell supports compound splitting / decompounding of multi-word input strings with three cases:
 // 1. mistakenly inserted space into a correct word led to two incorrect terms
@@ -117,6 +117,7 @@ namespace symspellcpppy {
         words_map_t belowThresholdWords;
 
         static const xregex wordsRegex;
+        static constexpr std::string_view serializedHeader = "SymSpellCppPy";
 
         bool CreateDictionaryEntryCheck(const xstring &key, int64_t count);
 
@@ -317,6 +318,95 @@ namespace symspellcpppy {
         /// the Edit distance sum between input string and corrected string,
         /// the Sum of word occurrence probabilities in log scale (a measure of how common and probable the corrected segmentation is).</returns>
         Info WordSegmentation(const xstring &input, int maxEditDistance, int maxSegmentationWordLength) const;
+
+        struct serializer {
+            std::ostream& data;
+            serializer (std::ostream& data) : data(data) {}
+
+            template <typename U>
+            void serialize (U const* value, size_t const& size) {
+                if constexpr (std::is_arithmetic_v<U>) {
+                    this->data.write(reinterpret_cast<char const*>(value), size * sizeof(U));
+
+                } else {
+                    for (size_t i = 0; i < size; ++i) {
+                        this->serialize<U>(value[i]);
+                    }
+                }
+            }
+
+            template <typename U>
+            void serialize (U const& value) {
+                if constexpr (std::is_arithmetic_v<U> || std::is_enum_v<U>) {
+                    this->data.write(reinterpret_cast<char const*>(&value), sizeof(U));
+
+                } else if constexpr (is_std_vector<U>::value || is_std_string<U>::value) {
+                    this->serialize<size_t>(value.size());
+                    this->serialize<typename U::value_type>(value.data(), value.size());
+
+                } else if constexpr (is_std_pair<U>::value) {
+                    this->serialize(value.first);
+                    this->serialize(value.second);
+
+                } else {
+                    throw std::runtime_error(typeid(U).name());
+                }
+            }
+
+            template <typename U>
+            void operator() (U const& value) { this->serialize<U>(value); }
+
+            template <typename U>
+            void operator() (U const* value, size_t const& size) { this->serialize<U>(value, size); }
+        };
+
+        struct deserializer {
+            std::istream& data;
+            deserializer (std::istream& data) : data(data) {}
+
+            template <typename U>
+            U deserialize (void) {
+                U result{};
+
+                if constexpr (std::is_arithmetic_v<U> || std::is_enum_v<U>) {
+                    this->data.read(reinterpret_cast<char*>(&result), sizeof(U));
+
+                } else if constexpr (is_std_vector<U>::value || is_std_string<U>::value) {
+                    result.resize(this->deserialize<size_t>());
+                    this->deserialize<typename U::value_type>(result.data(), result.size());
+
+                } else if constexpr (is_std_pair<U>::value) {
+                    result.first = this->deserialize<typeof(result.first)>();
+                    result.second = this->deserialize<typeof(result.second)>();
+
+                } else {
+                    throw std::runtime_error(typeid(U).name());
+                }
+
+                return result;
+            }
+
+            template <typename U>
+            void deserialize (U* out, size_t const& size) {
+                if constexpr (std::is_arithmetic_v<U>) {
+                    this->data.read(reinterpret_cast<char*>(out), size * sizeof(U));
+
+                } else {
+                    for (size_t i = 0; i < size; ++i) {
+                        out[i] = this->deserialize<U>();
+                    }
+                }
+            }
+
+            template <typename U>
+            U operator() () { return this->deserialize<U>(); }
+
+            template <typename U>
+            void operator() (U* out, size_t const& size) { this->deserialize<U>(out, size); }
+        };
+
+        void to_stream (std::ostream& out) const;
+        static SymSpell from_stream (std::istream& in);
 
         template<class Archive>
         void save (Archive &ar) const {

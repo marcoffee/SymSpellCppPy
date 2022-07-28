@@ -784,6 +784,59 @@ namespace symspellcpppy {
         return compositions[circularIndex];
     }
 
+    void SymSpell::to_stream (std::ostream& out) const {
+        serializer ser(out);
+
+        ser.serialize(serializedHeader.data(), serializedHeader.size());
+        ser.serialize<size_t>(1);
+
+        ser.serialize<size_t>(this->maxDictionaryEditDistance);
+        ser.serialize<size_t>(this->prefixLength);
+        ser.serialize<size_t>(this->countThreshold);
+        ser.serialize<DistanceAlgorithm>(this->distanceAlgorithm);
+
+        this->deletes.serialize(ser);
+        this->words.serialize(ser);
+        this->belowThresholdWords.serialize(ser);
+        this->bigrams.serialize(ser);
+
+        ser.serialize<size_t>(this->compactMask);
+        ser.serialize<size_t>(this->maxDictionaryWordLength);
+        ser.serialize<size_t>(this->bigramCountMin);
+    }
+
+    SymSpell SymSpell::from_stream (std::istream& in) {
+        deserializer dse(in);
+
+        std::string header(serializedHeader.size(), '\0');
+        dse.deserialize(header.data(), serializedHeader.size());
+
+        if (header != serializedHeader) {
+            throw std::runtime_error("Invalid serialized header.");
+        }
+
+        if (dse.deserialize<size_t>() != 1) {
+            throw std::runtime_error("Invalid serialized version.");
+        }
+
+        size_t const max_dist = dse.deserialize<size_t>();
+        size_t const prefix_length = dse.deserialize<size_t>();
+        size_t const count_threshold = dse.deserialize<size_t>();
+        DistanceAlgorithm const dist_algo = dse.deserialize<DistanceAlgorithm>();
+
+        SymSpell result(max_dist, prefix_length, count_threshold, 0, 0, dist_algo);
+
+        result.deletes = deletes_map_t::deserialize(dse, true);
+        result.words = words_map_t::deserialize(dse, true);
+        result.belowThresholdWords = words_map_t::deserialize(dse, true);
+        result.bigrams = bigram_map_t::deserialize(dse, true);
+
+        result.compactMask = dse.deserialize<size_t>();
+        result.maxDictionaryWordLength = dse.deserialize<size_t>();
+        result.bigramCountMin = dse.deserialize<size_t>();
+
+        return result;
+    }
 }
 
 std::ostream& operator<< (std::ostream &out, symspellcpppy::SymSpell const &ssp) {

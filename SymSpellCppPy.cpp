@@ -2,11 +2,120 @@
 // Created by vigi99 on 27/09/20.
 //
 
+#include <filesystem>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+#include <pybind11/stl/filesystem.h>
 #include "library.h"
 
 namespace py = pybind11;
+
+constexpr std::streamsize DEFAULT_BUFFER_SIZE = 128 * 1024;  // 128 KiB
+
+class py_istreambuf : public std::streambuf {
+     py::object _obj, _reader;
+     std::streamsize _buffer_size;
+     std::unique_ptr<char_type[]> _buffer;
+
+     protected:
+     virtual int_type underflow () override {
+          py::bytes read_bytes = _reader(_buffer_size);
+          py::buffer_info buff = py::reinterpret_borrow<py::buffer>(read_bytes).request(false);
+
+          if (buff.size == 0) {
+               return traits_type::eof();
+          }
+
+          std::copy_n(static_cast<char*>(buff.ptr), buff.size, static_cast<char*>(_buffer.get()));
+          setg(_buffer.get(), _buffer.get(), _buffer.get() + buff.size);
+
+          return traits_type::not_eof(*egptr());
+     }
+
+     public:
+     py_istreambuf (py::object obj, const std::streamsize buffer_size = DEFAULT_BUFFER_SIZE)
+          : _obj(obj)
+          , _reader(_obj.attr("read"))
+          , _buffer_size(buffer_size)
+          , _buffer(std::make_unique<char_type[]>(buffer_size))
+     {
+          if (_buffer_size == 0) {
+               throw std::runtime_error("buffer_size should be > 0");
+          }
+     }
+};
+
+class py_ostreambuf : public std::streambuf {
+     py::object _obj, _writer;
+     std::streamsize _buffer_size;
+     std::unique_ptr<char_type[]> _buffer;
+
+     protected:
+     virtual int_type sync () override {
+          return overflow(traits_type::eof());
+     }
+
+     virtual int_type overflow (int_type ch) override {
+          std::streamsize size = pptr() - pbase();
+
+          if (!traits_type::eq_int_type(ch, traits_type::eof())) {
+               *pptr() = traits_type::to_char_type(ch);
+               ++size;
+          }
+
+          if (size > 0) {
+               py::int_ const py_count = _writer(py::memoryview::from_memory(pbase(), size));
+
+               if (py::cast<std::streamsize>(py_count) != size) {
+                    return traits_type::eof();
+               }
+
+               setp(_buffer.get(), _buffer.get() + _buffer_size - 1);
+          }
+
+          return traits_type::not_eof(ch);
+     }
+
+     public:
+     py_ostreambuf (py::object obj, std::streamsize const buffer_size = DEFAULT_BUFFER_SIZE)
+          : _obj(obj)
+          , _writer(_obj.attr("write"))
+          , _buffer_size(buffer_size)
+          , _buffer(std::make_unique<char_type[]>(buffer_size))
+     {
+          if (_buffer_size == 0) {
+               throw std::runtime_error("buffer_size should be > 0");
+          }
+
+          setp(_buffer.get(), _buffer.get() + _buffer_size - 1);
+     }
+
+     virtual ~py_ostreambuf () {
+          sync();
+     }
+};
+
+class ptr_istreambuf : public std::streambuf {
+     std::streamsize available;
+
+     public:
+     ptr_istreambuf (char_type* begin, char_type* end) {
+          setg(begin, begin, end);
+     }
+
+     ptr_istreambuf (char_type* begin, std::streamsize const count)
+     : ptr_istreambuf(begin, begin + count) {}
+};
+
+void check_py_buffer (py::buffer_info const& buff) {
+     if (buff.strides.size() != 1) {
+          throw std::domain_error("Unable to load buffer: buffer should be 1-dimensional.");
+     }
+
+     if (!PyBuffer_IsContiguous(buff.view(), 'C')) {
+          throw std::domain_error("Unable to load buffer: buffer should be C-contiguous.");
+     }
+}
 
 PYBIND11_MODULE(SymSpellCppPy, m) {
     m.doc() = R"pbdoc(
@@ -214,7 +323,7 @@ PYBIND11_MODULE(SymSpellCppPy, m) {
                      } else {
                          throw std::invalid_argument("Cannot save to file: " + filepath);
                      }
-                 }, "Save internal representation to file",
+                 }, "Legacy save internal representation to file",
                  py::arg("filepath"))
             .def("load_pickle", [](symspellcpppy::SymSpell &sym, const std::string &filepath) {
                      if (Helpers::file_exists(filepath)) {
@@ -224,7 +333,7 @@ PYBIND11_MODULE(SymSpellCppPy, m) {
                      } else {
                          throw std::invalid_argument("Unable to load file from filepath: " + filepath);
                      }
-                 }, "Load internal representation from file",
+                 }, "Legacy load internal representation from file",
                  py::arg("filepath"))
             .def("save_pickle_bytes", [](const symspellcpppy::SymSpell &sym) {
                     std::ostringstream binary_stream(std::ios::out | std::ios::binary);
@@ -235,21 +344,81 @@ PYBIND11_MODULE(SymSpellCppPy, m) {
                  }, "Save internal representation to bytes")
             .def("load_pickle_bytes", [](symspellcpppy::SymSpell &sym, py::buffer bytes) {
                     py::buffer_info buff = bytes.request();
+                    check_py_buffer(buff);
 
-                    if (buff.strides.size() != 1) {
-                         throw std::domain_error("Unable to load buffer: buffer should be 1-dimensional.");
-                    }
+                    ptr_istreambuf cpp_buff(reinterpret_cast<char*>(buff.ptr), buff.size * buff.itemsize);
+                    std::istream cpp_stream(&cpp_buff);
 
-                    if (buff.strides[0] != buff.itemsize) {
-                         throw std::domain_error("Unable to load buffer: buffer should be contiguous.");
-                    }
-
-                    std::string const bytes_str(reinterpret_cast<char*>(buff.ptr), buff.size * buff.itemsize);
-                    std::istringstream binary_stream(bytes_str, std::ios::in | std::ios::binary);
-
-                    cereal::BinaryInputArchive ar(binary_stream);
+                    cereal::BinaryInputArchive ar(cpp_stream);
                     ar(sym);
                  }, "Load internal representation from buffers, such as 'bytes' and 'memoryview'",
-                 py::arg("bytes"));
+                 py::arg("bytes"))
+            .def("to_file", [](
+               const symspellcpppy::SymSpell &sym,
+               const std::variant<std::string, std::filesystem::path> &filepath) {
+                     std::ofstream binary_path = std::visit([] (auto&& path) -> std::ofstream {
+                          return std::ofstream(path, std::ios::out | std::ios::app | std::ios::binary);
+                     }, filepath);
 
+                     if (binary_path.is_open()) {
+                         sym.to_stream(binary_path);
+
+                     } else {
+                         throw std::invalid_argument(std::visit([] (auto&& path) -> std::string {
+                              return "Cannot save to file: " + std::string(path);
+                         }, filepath));
+                     }
+                 }, "Save internal representation to file",
+                 py::arg("filepath"))
+            .def_static("from_file", [](const std::variant<std::string, std::filesystem::path> &filepath) {
+                    std::ifstream binary_path = std::visit([] (auto&& path) -> std::ifstream {
+                         return std::ifstream(path, std::ios::binary);
+                    }, filepath);
+
+                    if (binary_path.is_open()) {
+                         return symspellcpppy::SymSpell::from_stream(binary_path);
+
+                    } else {
+                         throw std::invalid_argument(std::visit([] (auto&& path) -> std::string {
+                              return "Unable to load file from filepath: " + std::string(path);
+                         }, filepath));
+                    }
+                 }, "Load internal representation from file",
+                 py::arg("filepath"))
+            .def("to_bytes", [](const symspellcpppy::SymSpell &sym) {
+                    std::ostringstream sstr;
+                    sym.to_stream(sstr);
+                    return py::bytes(std::move(sstr).str());
+                 }, "Save internal representation to bytes")
+            .def_static("from_bytes", [](py::buffer bytes) {
+                    py::buffer_info buff = bytes.request();
+                    check_py_buffer(buff);
+
+                    ptr_istreambuf cpp_buff(reinterpret_cast<char*>(buff.ptr), buff.size * buff.itemsize);
+                    std::istream cpp_stream(&cpp_buff);
+                    return symspellcpppy::SymSpell::from_stream(cpp_stream);
+                 }, "Load internal representation from buffers, such as 'bytes' and 'memoryview'",
+                 py::arg("bytes"))
+            .def("to_stream", [](const symspellcpppy::SymSpell &sym, py::object py_stream, std::streamsize const buffer_size) {
+                    py_ostreambuf cpp_buff(py_stream, buffer_size);
+                    std::ostream cpp_stream(&cpp_buff);
+                    sym.to_stream(cpp_stream);
+                 }, "Save internal representation to python stream",
+                 py::arg("stream"), py::arg("buffer_size") = DEFAULT_BUFFER_SIZE)
+            .def_static("from_stream", [](py::object py_stream, std::streamsize const buffer_size) {
+                    py_istreambuf cpp_buff(py_stream, buffer_size);
+                    std::istream cpp_stream(&cpp_buff);
+                    return symspellcpppy::SymSpell::from_stream(cpp_stream);
+                 }, "Load internal representation from python stream",
+                 py::arg("stream"), py::arg("buffer_size") = DEFAULT_BUFFER_SIZE)
+            ;
+
+    m.attr("DEFAULT_SEPARATOR_CHAR") = DEFAULT_SEPARATOR_CHAR;
+    m.attr("DEFAULT_MAX_EDIT_DISTANCE") = DEFAULT_MAX_EDIT_DISTANCE;
+    m.attr("DEFAULT_PREFIX_LENGTH") = DEFAULT_PREFIX_LENGTH;
+    m.attr("DEFAULT_COUNT_THRESHOLD") = DEFAULT_COUNT_THRESHOLD;
+    m.attr("DEFAULT_INITIAL_CAPACITY") = DEFAULT_INITIAL_CAPACITY;
+    m.attr("DEFAULT_COMPACT_LEVEL") = DEFAULT_COMPACT_LEVEL;
+    m.attr("DEFAULT_DISTANCE_ALGORITHM") = DEFAULT_DISTANCE_ALGORITHM;
+    m.attr("DEFAULT_BUFFER_SIZE") = DEFAULT_BUFFER_SIZE;
 }
