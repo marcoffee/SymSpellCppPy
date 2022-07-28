@@ -115,6 +115,8 @@ namespace symspellcpppy {
         deletes_map_t deletes;
         words_map_t words;
         words_map_t belowThresholdWords;
+        bigram_map_t bigrams;
+        int64_t bigramCountMin = MAXLONG;
 
         static const xregex wordsRegex;
         static constexpr std::string_view serializedHeader = "SymSpellCppPy";
@@ -122,9 +124,6 @@ namespace symspellcpppy {
         bool CreateDictionaryEntryCheck(const xstring &key, int64_t count);
 
     public:
-        bigram_map_t bigrams;
-        int64_t bigramCountMin = MAXLONG;
-
         int MaxDictionaryEditDistance() const;
 
         int PrefixLength() const;
