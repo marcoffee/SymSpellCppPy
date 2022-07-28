@@ -14,7 +14,7 @@
 #define DIFFLIB_ENABLE_EXTERN_MACROS
 #include <difflib.h>
 
-DIFFLIB_INSTANTIATE_FOR_TYPE(xstring);
+DIFFLIB_INSTANTIATE_FOR_TYPE(xstring_view);
 
 template <typename>
 struct is_std_vector : std::false_type {};
@@ -153,13 +153,15 @@ public:
         const xstring_view& text_w_casing, const xstring_view& text_wo_casing
     ) {
         if (text_wo_casing.empty()) {
-            return xstring(text_wo_casing);
+            return "";
         }
         if (text_w_casing.empty()) {
             throw std::invalid_argument("We need 'text_w_casing' to know what casing to transfer!");
         }
 
-        auto foo = difflib::MakeSequenceMatcher(string_lower(text_w_casing), std::string(text_wo_casing));
+        xstring const lower_text_w_casing = string_lower(text_w_casing);
+        auto foo = difflib::MakeSequenceMatcher(xstring_view(lower_text_w_casing), text_wo_casing);
+
         xstring response_string;
         response_string.reserve(text_wo_casing.size());
 
