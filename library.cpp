@@ -175,38 +175,54 @@ namespace symspellcpppy {
     }
 
     bool SymSpell::LoadBigramDictionary(xifstream &corpusStream, int termIndex, int countIndex, xchar separatorChars) {
+        int const termAdd = (separatorChars == DEFAULT_SEPARATOR_CHAR) ? 1 : 0;
+        int const secondTermIndex = termIndex + termAdd;
+        int const minTerms = std::max(secondTermIndex, countIndex);
+        int const termCount = termAdd + 1;
         xstring line;
-        int linePartsLength = (separatorChars == DEFAULT_SEPARATOR_CHAR) ? 3 : 2;
-        while (getline(corpusStream, line)) {
-            std::vector<xstring> lineParts;
-            xstringstream ss(line);
-            xstring token;
-            while (getline(ss, token, separatorChars))
-                lineParts.push_back(token);
-            xstring key;
-            int64_t count;
-            if (lineParts.size() >= linePartsLength) {
-                key = (separatorChars == DEFAULT_SEPARATOR_CHAR) ? lineParts[termIndex] + XL(" ") +
-                                                                   lineParts[termIndex + 1]
-                                                                 : lineParts[termIndex];
-                try {
-                    count = stoll(lineParts[countIndex]);
 
-                } catch (...) {
-                    printf("Cannot convert %s to integer\n", lineParts[countIndex].c_str());
+        while (getline(corpusStream, line)) {
+            int64_t count = 1;
+            std::vector<xstring_view> tokens;
+            size_t linePos = 0;
+            xstring_view term;
+
+            tokens.reserve(termCount);
+
+            for (int i = 0; i <= minTerms && Helpers::split_line(line, separatorChars, linePos, term); ++i) {
+                if (i == termIndex || i == secondTermIndex) {
+                    tokens.emplace_back(term);
                 }
-            } else {
-                key = line;
-                count = 1;
+
+                if (i == countIndex) {
+                    if (!Helpers::safe_full_string_to_integer(term, count)) {
+                        xcerr << "Cannot convert " << term << " to integer" << std::endl;
+                    }
+                }
             }
 
-            bigrams.emplace(key, count);
-            if (count < bigramCountMin) bigramCountMin = count;
+            xstring token_store;
+            xstring_view token;
+
+            if (tokens.size() < termCount) {
+                token = line;
+
+            } else if (termCount == 1) {
+                token = tokens[0];
+
+            } else {
+                token_store = Helpers::strings_join(tokens[0], XL(' '), tokens[1]);
+                token = token_store;
+            }
+
+            bigrams.emplace(token, count);
+
+            if (count < bigramCountMin) {
+                bigramCountMin = count;
+            }
         }
 
-        if (bigrams.empty())
-            return false;
-        return true;
+        return !bigrams.empty();
     }
 
     bool SymSpell::LoadDictionary(const std::string &corpus, int termIndex, int countIndex, xchar separatorChars) {
