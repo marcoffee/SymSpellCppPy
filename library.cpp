@@ -225,32 +225,29 @@ namespace symspellcpppy {
     bool SymSpell::LoadDictionary(xifstream &corpusStream, int termIndex, int countIndex, xchar separatorChars) {
         SuggestionStage staging(16384);
         xstring line;
-        int i = 0;
+        const int minTerms = std::max(termIndex, countIndex);
 
         while (getline(corpusStream, line)) {
-            i++;
-            std::vector<xstring> lineParts;
-            xstringstream ss(line);
-            xstring token;
-            while (getline(ss, token, separatorChars))
-                lineParts.push_back(token);
-            if (lineParts.size() >= 2) {
-                int64_t count = 1;
-                try {
-                    count = std::stoll(lineParts[countIndex]);
-                } catch (const std::invalid_argument &) {
-                    // Do nothing
+            int64_t count = 1;
+            xstring_view token = line;
+            size_t linePos = 0;
+            xstring_view term;
+
+            for (int i = 0; i <= minTerms && Helpers::split_line(line, separatorChars, linePos, term); ++i) {
+                if (i == termIndex) {
+                    token = term;
                 }
-                CreateDictionaryEntry(lineParts[termIndex], count, staging);
-            } else {
-                CreateDictionaryEntry(line, 1, staging);
+
+                if (i == countIndex) {
+                    Helpers::safe_full_string_to_integer(term, count);
+                }
             }
 
+            CreateDictionaryEntry(token, count, staging);
         }
+
         CommitStaged(staging);
-        if (EntryCount() == 0)
-            return false;
-        return true;
+        return EntryCount() != 0;
     }
 
     bool SymSpell::CreateDictionary(const std::string &corpus) {

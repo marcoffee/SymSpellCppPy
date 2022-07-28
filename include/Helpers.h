@@ -5,6 +5,7 @@
 #pragma once
 
 #include <sys/stat.h>
+#include <charconv>
 #include <type_traits>
 #include <utility>
 #include <iostream>
@@ -163,6 +164,37 @@ public:
         out.reserve(strings_size(std::forward<Args>(strings)...));
         strings_append(out, std::forward<Args>(strings)...);
         return out;
+    }
+
+    static bool split_line (
+        xstring_view const& line, xchar const separator, size_t& pos, xstring_view& result
+    ) {
+        if (pos == xstring::npos) {
+            return false;
+        }
+
+        const size_t next_pos = line.find(separator, pos);
+        result = line.substr(pos, next_pos - pos);
+
+        pos = next_pos;
+
+        if (pos != xstring::npos) {
+            pos++;
+        }
+
+        return true;
+    }
+
+    template <typename T>
+    static bool safe_full_string_to_integer (xstring_view const& string, T& value) {
+        T found;
+
+        if (std::from_chars(string.begin(), string.end(), found).ptr == string.end()) {
+            value = found;
+            return true;
+        }
+
+        return false;
     }
 
     static bool file_exists (const std::string& name) {
