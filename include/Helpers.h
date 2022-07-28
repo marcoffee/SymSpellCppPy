@@ -323,10 +323,4 @@ public:
     bool operator== (const SuggestItem& s2) const {
         return this->distance == s2.distance && this->count == s2.count && this->term == s2.term;
     }
-
-    void set(const SuggestItem &exam) {
-        this->term = exam.term;
-        this->distance = exam.distance;
-        this->count = exam.count;
-    }
 };

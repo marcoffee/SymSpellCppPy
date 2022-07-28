@@ -596,7 +596,8 @@ namespace symspellcpppy {
             } else {
                 SuggestItem suggestionSplitBest;
 
-                if (!suggestions.empty()) suggestionSplitBest.set(suggestions[0]);
+                if (!suggestions.empty())
+                    suggestionSplitBest = suggestions[0];
 
                 if (termList1[i].size() > 1) {
                     for (int j = 1; j < termList1[i].size(); j++) {
