@@ -53,8 +53,8 @@ namespace symspellcpppy {
     }
 
     static inline void trim(xstring &s) {
-        ltrim(s);
         rtrim(s);
+        ltrim(s);
     }
 
     class Info {
