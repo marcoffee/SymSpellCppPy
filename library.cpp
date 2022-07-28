@@ -36,10 +36,11 @@ namespace symspellcpppy {
     }
 
     SymSpell::SymSpell(int _maxDictionaryEditDistance, int _prefixLength, int _countThreshold, int _initialCapacity,
-                       unsigned char _compactLevel) :
+                       unsigned char _compactLevel, DistanceAlgorithm _distanceAlgorithm) :
             maxDictionaryEditDistance(_maxDictionaryEditDistance),
             prefixLength(_prefixLength),
-            countThreshold(_countThreshold) {
+            countThreshold(_countThreshold),
+            distanceAlgorithm(_distanceAlgorithm) {
         if (_initialCapacity < 0) throw std::invalid_argument("initial_capacity is too small.");
         if (_maxDictionaryEditDistance < 0)
             throw std::invalid_argument("max_dictionary_edit_distance cannot be negative");

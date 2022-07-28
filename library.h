@@ -7,6 +7,7 @@
 #define DEFAULT_COUNT_THRESHOLD 1
 #define DEFAULT_INITIAL_CAPACITY 82765
 #define DEFAULT_COMPACT_LEVEL 5
+#define DEFAULT_DISTANCE_ALGORITHM DistanceAlgorithm::DamerauOSADistance
 #define min3(a, b, c) (min(a, min(b, c)))
 #define MAXINT LLONG_MAX
 #define MAXLONG MAXINT
@@ -109,7 +110,7 @@ namespace symspellcpppy {
         int prefixLength; //prefix length  5..7
         long countThreshold; //a threshold might be specified, when a term occurs so frequently in the corpus that it is considered a valid word for spelling correction
         int compactMask;
-        DistanceAlgorithm distanceAlgorithm = DistanceAlgorithm::DamerauOSADistance;
+        DistanceAlgorithm distanceAlgorithm;
         int maxDictionaryWordLength; //maximum word length
         deletes_map_t deletes;
         words_map_t words;
@@ -149,7 +150,8 @@ namespace symspellcpppy {
         explicit SymSpell(int maxDictionaryEditDistance = DEFAULT_MAX_EDIT_DISTANCE,
                           int prefixLength = DEFAULT_PREFIX_LENGTH, int countThreshold = DEFAULT_COUNT_THRESHOLD,
                           int initialCapacity = DEFAULT_INITIAL_CAPACITY,
-                          unsigned char compactLevel = DEFAULT_COMPACT_LEVEL);
+                          unsigned char compactLevel = DEFAULT_COMPACT_LEVEL,
+                          DistanceAlgorithm distanceAlgorithm = DEFAULT_DISTANCE_ALGORITHM);
 
         bool CreateDictionaryEntry(const xstring &key, int64_t count);
         bool CreateDictionaryEntry(const xstring &key, int64_t count, SuggestionStage &staging);

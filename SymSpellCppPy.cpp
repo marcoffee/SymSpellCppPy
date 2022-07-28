@@ -81,12 +81,13 @@ PYBIND11_MODULE(SymSpellCppPy, m) {
             .export_values();
 
     py::class_<symspellcpppy::SymSpell>(m, "SymSpell")
-            .def(py::init<int, int, int, int, unsigned char>(), "SymSpell builder options",
+            .def(py::init<int, int, int, int, unsigned char, DistanceAlgorithm>(), "SymSpell builder options",
                  py::arg("max_dictionary_edit_distance") = DEFAULT_MAX_EDIT_DISTANCE,
                  py::arg("prefix_length") = DEFAULT_PREFIX_LENGTH,
                  py::arg("count_threshold") = DEFAULT_COUNT_THRESHOLD,
                  py::arg("initial_capacity") = DEFAULT_INITIAL_CAPACITY,
-                 py::arg("compact_level") = DEFAULT_COMPACT_LEVEL
+                 py::arg("compact_level") = DEFAULT_COMPACT_LEVEL,
+                 py::arg("distance_algorithm") = DEFAULT_DISTANCE_ALGORITHM
             )
             .def("word_count", &symspellcpppy::SymSpell::WordCount, "Number of words entered.")
             .def("max_length", &symspellcpppy::SymSpell::MaxLength, "Max length of words entered.")
