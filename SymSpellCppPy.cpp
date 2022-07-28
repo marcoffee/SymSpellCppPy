@@ -134,8 +134,11 @@ PYBIND11_MODULE(SymSpellCppPy, m) {
 
     py::class_<symspellcpppy::Info>(m, "Info")
             .def(py::init<>())
-            .def("set", &symspellcpppy::Info::set, "Set Info properties", py::arg("segmented_string"),
-                 py::arg("corrected_string"),
+            .def(py::init<xstring&&, xstring&&, int, double>(),
+                 py::arg("segmented_string"), py::arg("corrected_string"),
+                 py::arg("distance_sum"), py::arg("log_prob_sum"))
+            .def("set", &symspellcpppy::Info::set, "Set Info properties",
+                 py::arg("segmented_string"), py::arg("corrected_string"),
                  py::arg("distance_sum"), py::arg("log_prob_sum"))
             .def("get_segmented", &symspellcpppy::Info::getSegmented, "The word segmented string.")
             .def("get_corrected", &symspellcpppy::Info::getCorrected,
@@ -293,20 +296,20 @@ PYBIND11_MODULE(SymSpellCppPy, m) {
                  py::arg("input"),
                  py::arg("max_edit_distance"),
                  py::arg("transfer_casing"))
-            .def("word_segmentation", py::overload_cast<const xstring &>(
+            .def("word_segmentation", py::overload_cast<const xstring_view &>(
                     &symspellcpppy::SymSpell::WordSegmentation, py::const_),
                  " WordSegmentation divides a string into words by inserting missing spaces at the appropriate positions\n"
                  "    misspelled words are corrected and do not affect segmentation\n"
                  "    existing spaces are allowed and considered for optimum segmentation",
                  py::arg("input"))
-            .def("word_segmentation", py::overload_cast<const xstring &, int>(
+            .def("word_segmentation", py::overload_cast<const xstring_view &, int>(
                     &symspellcpppy::SymSpell::WordSegmentation, py::const_),
                  " WordSegmentation divides a string into words by inserting missing spaces at the appropriate positions\n"
                  "    misspelled words are corrected and do not affect segmentation\n"
                  "    existing spaces are allowed and considered for optimum segmentation",
                  py::arg("input"),
                  py::arg("max_edit_distance"))
-            .def("word_segmentation", py::overload_cast<const xstring &, int, int>(
+            .def("word_segmentation", py::overload_cast<const xstring_view &, int, int>(
                     &symspellcpppy::SymSpell::WordSegmentation, py::const_),
                  " WordSegmentation divides a string into words by inserting missing spaces at the appropriate positions\n"
                  "    misspelled words are corrected and do not affect segmentation\n"

@@ -753,15 +753,15 @@ namespace symspellcpppy {
         return suggestionsLine;
     }
 
-    Info SymSpell::WordSegmentation(const xstring &input) const {
+    Info SymSpell::WordSegmentation(const xstring_view &input) const {
         return WordSegmentation(input, MaxDictionaryEditDistance(), maxDictionaryWordLength);
     }
 
-    Info SymSpell::WordSegmentation(const xstring &input, int maxEditDistance) const {
+    Info SymSpell::WordSegmentation(const xstring_view &input, int maxEditDistance) const {
         return WordSegmentation(input, maxEditDistance, maxDictionaryWordLength);
     }
 
-    Info SymSpell::WordSegmentation(const xstring &input, int maxEditDistance, int maxSegmentationWordLength) const {
+    Info SymSpell::WordSegmentation(const xstring_view &input, int maxEditDistance, int maxSegmentationWordLength) const {
         // v6.7
         // normalize ligatures:
         // "scientific"
@@ -773,16 +773,19 @@ namespace symspellcpppy {
         int circularIndex = -1;
 
         for (int j = 0; j < input.size(); j++) {
-            int imax = std::min((int) input.size() - j, maxSegmentationWordLength);
+            int imax = std::min<int>(input.size() - j, maxSegmentationWordLength);
+
             for (int i = 1; i <= imax; i++) {
-                xstring part = input.substr(j, i);
+                xstring part(input.substr(j, i));
+                xstring topResult;
+
                 int separatorLength = 0;
                 int topEd = 0;
                 double topProbabilityLog = 0;
-                xstring topResult;
 
                 if (isxspace(part[0])) {
                     part = part.substr(1);
+
                 } else {
                     separatorLength = 1;
                 }
@@ -793,8 +796,8 @@ namespace symspellcpppy {
 
                 //v6.7
                 //Lookup against the lowercase term
-                auto partLower = Helpers::string_lower(part);
-                std::vector<SuggestItem> results = Lookup(partLower, Top, maxEditDistance);
+                std::vector<SuggestItem> results = Lookup(Helpers::string_lower(part), Top, maxEditDistance);
+
                 if (!results.empty()) {
                     topResult = results[0].term;
 
@@ -804,9 +807,9 @@ namespace symspellcpppy {
                         topResult[0] = to_xupper(topResult[0]);
                     }
 
-
                     topEd += results[0].distance;
                     topProbabilityLog = log10((double) results[0].count / (double) N);
+
                 } else {
                     topResult = part;
                     topEd += part.size();
@@ -816,40 +819,58 @@ namespace symspellcpppy {
                 int destinationIndex = ((i + circularIndex) % arraySize);
 
                 if (j == 0) {
-                    compositions[destinationIndex].set(part, topResult, topEd, topProbabilityLog);
-                } else {
-                    auto circular_distance = compositions[circularIndex].getDistance();
-                    auto destination_distance = compositions[destinationIndex].getDistance();
-                    auto circular_probablity = compositions[circularIndex].getProbability();
-                    auto destination_probablity = compositions[destinationIndex].getProbability();
+                    compositions[destinationIndex] = Info(
+                        std::move(part), std::move(topResult),
+                        topEd, topProbabilityLog
+                    );
 
-                    if ((i == maxSegmentationWordLength)
-                        || (((circular_distance + topEd == destination_distance)
-                            || (circular_distance + separatorLength + topEd == destination_distance))
-                            && (destination_probablity < circular_probablity + topProbabilityLog))
-                        || (circular_distance + separatorLength + topEd < destination_distance)) {
-                        //v6.7
-                        //keep punctuation or spostrophe adjacent to previous word
-                        if (((topResult.size() == 1) && (is_xpunct(topResult[0]) > 0)) || ((topResult.size() == 2) &&
-                                                                                        (topResult.rfind(XL("’"), 0) ==
-                                                                                            0))) {
-                            xstring seg = compositions[circularIndex].getSegmented() + part;
-                            xstring correct = compositions[circularIndex].getCorrected() + topResult;
-                            int d = circular_distance + topEd;
-                            double prob = circular_probablity + topProbabilityLog;
-                            compositions[destinationIndex].set(seg, correct, d, prob);
-                        } else {
-                            xstring seg = compositions[circularIndex].getSegmented() + XL(" ") + part;
-                            xstring correct = compositions[circularIndex].getCorrected() + XL(" ") + topResult;
-                            int d = circular_distance + separatorLength + topEd;
-                            double prob = circular_probablity + topProbabilityLog;
-                            compositions[destinationIndex].set(seg, correct, d, prob);
-                        }
+                    continue;
+                }
+
+                auto circular_distance = compositions[circularIndex].getDistance();
+                auto destination_distance = compositions[destinationIndex].getDistance();
+                auto circular_probablity = compositions[circularIndex].getProbability();
+                auto destination_probablity = compositions[destinationIndex].getProbability();
+
+                if (
+                    (i == maxSegmentationWordLength) || (
+                        (
+                            (circular_distance + topEd == destination_distance) ||
+                            (circular_distance + separatorLength + topEd == destination_distance)
+                        ) && (
+                            destination_probablity < circular_probablity + topProbabilityLog
+                        )
+                    ) || (
+                        circular_distance + separatorLength + topEd < destination_distance
+                    )
+                ) {
+                    //v6.7
+                    //keep punctuation or spostrophe adjacent to previous word
+                    if (
+                        ((topResult.size() == 1) && (is_xpunct(topResult[0]) > 0)) ||
+                        ((topResult.size() == 2) && (topResult.rfind(XL("’"), 0) == 0))
+                    ) {
+                        compositions[destinationIndex] = Info(
+                            Helpers::strings_join(compositions[circularIndex].getSegmented(), part),
+                            Helpers::strings_join(compositions[circularIndex].getCorrected(), topResult),
+                            circular_distance + topEd,
+                            circular_probablity + topProbabilityLog
+                        );
+
+                    } else {
+                        compositions[destinationIndex] = Info(
+                            Helpers::strings_join(compositions[circularIndex].getSegmented(), XL(' '), part),
+                            Helpers::strings_join(compositions[circularIndex].getCorrected(), XL(' '), topResult),
+                            circular_distance + separatorLength + topEd,
+                            circular_probablity + topProbabilityLog
+                        );
                     }
                 }
             }
-            circularIndex++;
-            if (circularIndex == arraySize) circularIndex = 0;
+
+            if (++circularIndex == arraySize) {
+                circularIndex = 0;
+            }
         }
         return compositions[circularIndex];
     }

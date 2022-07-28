@@ -64,6 +64,11 @@ namespace symspellcpppy {
         int distanceSum;
         double probabilityLogSum;
     public:
+        Info () {}
+
+        Info (xstring&& seg, xstring&& cor, int distance, double prob)
+        : segmentedstring(seg), correctedstring(cor), distanceSum(distance), probabilityLogSum(prob) {}
+
         void set(const xstring &seg, const xstring &cor, int d, double prob) {
             segmentedstring = seg;
             correctedstring = cor;
@@ -314,7 +319,7 @@ namespace symspellcpppy {
         /// the word segmented and spelling corrected string,
         /// the Edit distance sum between input string and corrected string,
         /// the Sum of word occurrence probabilities in log scale (a measure of how common and probable the corrected segmentation is).</returns>
-        Info WordSegmentation(const xstring &input) const;
+        Info WordSegmentation(const xstring_view &input) const;
 
         /// <summary>Find suggested spellings for a multi-word input string (supports word splitting/merging).</summary>
         /// <param name="input">The string being spell checked.</param>
@@ -324,7 +329,7 @@ namespace symspellcpppy {
         /// the word segmented and spelling corrected string,
         /// the Edit distance sum between input string and corrected string,
         /// the Sum of word occurrence probabilities in log scale (a measure of how common and probable the corrected segmentation is).</returns>
-        Info WordSegmentation(const xstring &input, int maxEditDistance) const;
+        Info WordSegmentation(const xstring_view &input, int maxEditDistance) const;
 
         /// <summary>Find suggested spellings for a multi-word input string (supports word splitting/merging).</summary>
         /// <param name="input">The string being spell checked.</param>
@@ -335,7 +340,7 @@ namespace symspellcpppy {
         /// the word segmented and spelling corrected string,
         /// the Edit distance sum between input string and corrected string,
         /// the Sum of word occurrence probabilities in log scale (a measure of how common and probable the corrected segmentation is).</returns>
-        Info WordSegmentation(const xstring &input, int maxEditDistance, int maxSegmentationWordLength) const;
+        Info WordSegmentation(const xstring_view &input, int maxEditDistance, int maxSegmentationWordLength) const;
 
         struct serializer {
             std::ostream& data;
