@@ -399,7 +399,7 @@ namespace symspellcpppy {
 
                         if (distance <= maxEditDistance2) {
                             suggestionCount = words[suggestion];
-                            SuggestItem si = SuggestItem(suggestion, distance, suggestionCount);
+
                             if (!suggestions.empty()) {
                                 switch (verbosity) {
                                     case Closest: {
@@ -409,7 +409,7 @@ namespace symspellcpppy {
                                     case Top: {
                                         if (distance < maxEditDistance2 || suggestionCount > suggestions[0].count) {
                                             maxEditDistance2 = distance;
-                                            suggestions[0] = si;
+                                            suggestions[0] = SuggestItem(suggestion, distance, suggestionCount);
                                         }
                                         continue;
                                     }
@@ -417,8 +417,9 @@ namespace symspellcpppy {
                                         break;
                                 }
                             }
+
                             if (verbosity != All) maxEditDistance2 = distance;
-                            suggestions.push_back(si);
+                            suggestions.emplace_back(suggestion, distance, suggestionCount);
                         }
                     }//end foreach
                 }//end if
@@ -450,8 +451,8 @@ namespace symspellcpppy {
         return suggestions;
     }//end if
 
-    bool SymSpell::DeleteInSuggestionPrefix(const xstring& deleteSugg, int deleteLen, xstring suggestion,
-                                            int suggestionLen) const {
+    bool SymSpell::DeleteInSuggestionPrefix(const xstring& deleteSugg, int deleteLen,
+                                            const xstring &suggestion, int suggestionLen) const {
         if (deleteLen == 0) return true;
         if (prefixLength < suggestionLen) suggestionLen = prefixLength;
         int j = 0;
@@ -469,8 +470,7 @@ namespace symspellcpppy {
         xstring::const_iterator ptr(text.cbegin());
 
         while (regex_search(ptr, text.cend(), m, wordsRegex)) {
-            xstring matchLower = Helpers::string_lower(m[0]);
-            matches.push_back(matchLower);
+            matches.emplace_back(Helpers::string_lower(m[0]));
             ptr = m.suffix().first;
         }
 
@@ -660,7 +660,8 @@ namespace symspellcpppy {
         double count = N;
         xstring s;
         for (const SuggestItem &si : suggestionParts) {
-            s += (si.term + XL(" "));
+            s += si.term;
+            s += XL(' ');
             count *= (double) si.count / (double) N;
         }
         rtrim(s);

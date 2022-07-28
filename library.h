@@ -64,18 +64,18 @@ namespace symspellcpppy {
         int distanceSum;
         double probabilityLogSum;
     public:
-        void set(xstring &seg, xstring &cor, int d, double prob) {
+        void set(const xstring &seg, const xstring &cor, int d, double prob) {
             segmentedstring = seg;
             correctedstring = cor;
             distanceSum = d;
             probabilityLogSum = prob;
         };
 
-        xstring getSegmented() const {
+        const xstring& getSegmented() const {
             return segmentedstring;
         };
 
-        xstring getCorrected() const {
+        const xstring& getCorrected() const {
             return correctedstring;
         };
 
@@ -230,7 +230,7 @@ namespace symspellcpppy {
 
     private:
         bool
-        DeleteInSuggestionPrefix(const xstring& deleteSugg, int deleteLen, xstring suggestion, int suggestionLen) const;
+        DeleteInSuggestionPrefix(const xstring& deleteSugg, int deleteLen, const xstring &suggestion, int suggestionLen) const;
 
         static std::vector<xstring> ParseWords(const xstring &text);
 

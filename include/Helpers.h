@@ -22,7 +22,7 @@ public:
         EQUAL,
         REPLACE};
 
-    static const Value getType(std::string type) {
+    static const Value getType(const std::string &type) {
         const std::map<std::string, Value> optionStrings {
                 { "insert", Value::INSERT },
                 { "delete", Value::DELETE },
