@@ -339,7 +339,6 @@ namespace symspellcpppy {
             hashset2.insert(input);
 
             int maxEditDistance2 = maxEditDistance;
-            int candidatePointer = 0;
             std::deque<xstring> candidates;
 
             int inputPrefixLen = inputLen;
@@ -350,8 +349,11 @@ namespace symspellcpppy {
                 candidates.emplace_back(input);
             }
             auto distanceComparer = EditDistance(distanceAlgorithm);
-            while (candidatePointer < candidates.size()) {
-                const xstring& candidate = candidates[candidatePointer++];
+
+            while (!candidates.empty()) {
+                const xstring candidate = std::move(candidates.front());
+                candidates.pop_front();
+
                 const int candidateLen = candidate.size();
                 const int lengthDiff = inputPrefixLen - candidateLen;
 
