@@ -401,20 +401,15 @@ namespace symspellcpppy {
                             suggestionCount = words.at(suggestion);
 
                             if (!suggestions.empty()) {
-                                switch (verbosity) {
-                                    case Closest: {
-                                        if (distance < maxEditDistance2) suggestions.clear();
-                                        break;
+                                if (verbosity == Closest) {
+                                    if (distance < maxEditDistance2) suggestions.clear();
+
+                                } else if (verbosity == Top) {
+                                    if (distance < maxEditDistance2 || suggestionCount > suggestions[0].count) {
+                                        maxEditDistance2 = distance;
+                                        suggestions[0] = SuggestItem(suggestion, distance, suggestionCount);
                                     }
-                                    case Top: {
-                                        if (distance < maxEditDistance2 || suggestionCount > suggestions[0].count) {
-                                            maxEditDistance2 = distance;
-                                            suggestions[0] = SuggestItem(suggestion, distance, suggestionCount);
-                                        }
-                                        continue;
-                                    }
-                                    case All:
-                                        break;
+                                    continue;
                                 }
                             }
 
