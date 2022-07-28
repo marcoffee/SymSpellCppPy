@@ -461,8 +461,8 @@ namespace symspellcpppy {
         return suggestions;
     }//end if
 
-    bool SymSpell::DeleteInSuggestionPrefix(const xstring& deleteSugg, int deleteLen,
-                                            const xstring &suggestion, int suggestionLen) const {
+    bool SymSpell::DeleteInSuggestionPrefix(const xstring_view& deleteSugg, int deleteLen,
+                                            const xstring_view& suggestion, int suggestionLen) const {
         if (deleteLen == 0) return true;
         if (prefixLength < suggestionLen) suggestionLen = prefixLength;
         int j = 0;

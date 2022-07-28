@@ -256,7 +256,7 @@ namespace symspellcpppy {
 
     private:
         bool
-        DeleteInSuggestionPrefix(const xstring& deleteSugg, int deleteLen, const xstring &suggestion, int suggestionLen) const;
+        DeleteInSuggestionPrefix(const xstring_view& deleteSugg, int deleteLen, const xstring_view& suggestion, int suggestionLen) const;
 
         static std::vector<xstring> ParseWords(const xstring_view &text);
 
