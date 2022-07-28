@@ -563,7 +563,7 @@ namespace symspellcpppy {
                                                                    editDistanceMax);
 
                 if (!suggestionsCombi.empty()) {
-                    SuggestItem best1 = suggestionParts[suggestionParts.size() - 1];
+                    SuggestItem const& best1 = suggestionParts[suggestionParts.size() - 1];
                     SuggestItem best2 = SuggestItem();
                     if (!suggestions.empty()) {
                         best2 = suggestions[0];
@@ -652,18 +652,18 @@ namespace symspellcpppy {
                     if (suggestionSplitBest.count) {
                         suggestionParts.push_back(suggestionSplitBest);
                     } else {
-                        SuggestItem si = SuggestItem();
-                        si.term = termList1[i];
-                        si.count = (long) ((double) 10 / pow((double) 10, (double) si.term.size()));
-                        si.distance = editDistanceMax + 1;
-                        suggestionParts.push_back(si);
+                        suggestionParts.emplace_back(
+                            termList1[i],
+                            editDistanceMax + 1,
+                            (long) ((double) 10 / pow((double) 10, (double) termList1[i].size()))
+                        );
                     }
                 } else {
-                    SuggestItem si = SuggestItem();
-                    si.term = termList1[i];
-                    si.count = (long) ((double) 10 / pow((double) 10, (double) si.term.size()));
-                    si.distance = editDistanceMax + 1;
-                    suggestionParts.push_back(si);
+                    suggestionParts.emplace_back(
+                        termList1[i],
+                        editDistanceMax + 1,
+                        (long) ((double) 10 / pow((double) 10, (double) termList1[i].size()))
+                    );
                 }
             }
             nextTerm:;
