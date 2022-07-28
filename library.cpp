@@ -304,16 +304,18 @@ namespace symspellcpppy {
     bool SymSpell::CreateDictionary(xifstream &corpusStream) {
         xstring line;
         SuggestionStage staging(16384);
+
         while (getline(corpusStream, line)) {
-            for (const xstring &key : ParseWords(line)) {
+            xstring key;
+            size_t pos = 0;
+
+            while (ParseWords(line, pos, key)) {
                 CreateDictionaryEntry(key, 1, staging);
             }
-
         }
+
         CommitStaged(staging);
-        if (EntryCount() == 0)
-            return false;
-        return true;
+        return EntryCount() != 0;
     }
 
     void SymSpell::PurgeBelowThresholdWords() {
@@ -514,19 +516,17 @@ namespace symspellcpppy {
         return true;
     }
 
-    std::vector<xstring> SymSpell::ParseWords(const xstring_view &text) {
+    bool SymSpell::ParseWords(const xstring_view &text, size_t& pos, xstring& result) {
         xsmatch m;
-        std::vector<xstring> matches;
-        xchar const* begin = text.data();
-        xchar const* const end = begin + text.size();
 
-        while (regex_search(begin, end, m, wordsRegex)) {
+        if (std::regex_search(text.data() + pos, text.data() + text.size(), m, wordsRegex)) {
             auto const sub_m = m[0];
-            matches.emplace_back(Helpers::string_lower(xstring_view(sub_m.first, sub_m.length())));
-            begin = sub_m.second;
+            result = Helpers::string_lower(xstring_view(sub_m.first, sub_m.length()));
+            pos = sub_m.second - text.data();
+            return true;
         }
 
-        return matches;
+        return false;
     }
 
     void
@@ -588,20 +588,21 @@ namespace symspellcpppy {
     }
 
     std::vector<SuggestItem> SymSpell::LookupCompound(const xstring_view &input, int editDistanceMax, bool transferCasing) const {
-        std::vector<xstring> termList1 = ParseWords(input);
-
         std::vector<SuggestItem> suggestions;     //suggestions for a single term
         std::vector<SuggestItem> suggestionParts; //1 line with separate parts
         auto distanceComparer = EditDistance(distanceAlgorithm);
         bool lastCombi = false;
 
-        for (int i = 0; i < termList1.size(); i++) {
-            const xstring_view termWord = termList1[i];
+        size_t inputPos = 0;
+        xstring prevTermWord, termWordStore;
+
+        for (int i = 0; ParseWords(input, inputPos, termWordStore); i++, prevTermWord = std::move(termWordStore)) {
+            const xstring_view termWord = termWordStore;
             suggestions = Lookup(termWord, Top, editDistanceMax);
 
             if ((i > 0) && !lastCombi) {
                 std::vector<SuggestItem> suggestionsCombi = Lookup(
-                    Helpers::strings_join(termList1[i - 1], termWord), Top, editDistanceMax
+                    Helpers::strings_join(prevTermWord, termWord), Top, editDistanceMax
                 );
 
                 if (!suggestionsCombi.empty()) {

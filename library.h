@@ -263,7 +263,7 @@ namespace symspellcpppy {
         bool
         DeleteInSuggestionPrefix(const xstring_view& deleteSugg, int deleteLen, const xstring_view& suggestion, int suggestionLen) const;
 
-        static std::vector<xstring> ParseWords(const xstring_view &text);
+        static bool ParseWords(const xstring_view &text, size_t& pos, xstring& result);
 
         void
         Edits(const xstring_view &word, int editDistance, tsl::array_set<xchar>& deleteWords) const;
