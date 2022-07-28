@@ -292,10 +292,6 @@ public:
     SuggestItem(const xstring_view &term, int distance, int64_t count)
     : term(term), distance(distance), count(count) {}
 
-    int GetHashCode() const {
-        return std::hash<xstring>{}(this->term);
-    }
-
     xstring Tostring() const {
         return XL("{") + term + XL(", ") + to_xstring(distance) + XL(", ") + to_xstring(count) + XL("}");
     }
