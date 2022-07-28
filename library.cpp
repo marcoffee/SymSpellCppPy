@@ -449,9 +449,7 @@ namespace symspellcpppy {
             }//end while
 
             if (suggestions.size() > 1)
-                std::sort(suggestions.begin(), suggestions.end(), [](SuggestItem &l, SuggestItem &r) {
-                    return l.CompareTo(r) < 0 ? 1 : 0;
-                });
+                std::sort(suggestions.begin(), suggestions.end());
 
             if (transferCasing) {
                 for (auto &suggestion: suggestions) {

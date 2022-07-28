@@ -98,15 +98,6 @@ public:
         return (int) ((length * (1 - similarity)) + .0000000001);
     }
 
-    static int CompareTo(int64_t mainValue, int64_t compareValue) {
-        if (mainValue == compareValue)
-            return 0;
-        else if (mainValue > compareValue)
-            return 1;
-        else
-            return -1;
-    }
-
     static void string_upper(const xstring_view& a, xstring& out) {
         size_t const old_size = out.size();
         out.resize(old_size + a.size());
@@ -301,20 +292,6 @@ public:
     SuggestItem(const xstring_view &term, int distance, int64_t count)
     : term(term), distance(distance), count(count) {}
 
-    int CompareTo(const SuggestItem &other) const {
-        int disCom = Helpers::CompareTo(this->distance, other.distance);
-        if (disCom != 0)
-            return disCom;
-        int cntCom = Helpers::CompareTo(other.count, this->count);
-        if (cntCom != 0)
-            return cntCom;
-        return this->term.compare(other.term);
-    }
-
-    bool Equals(const SuggestItem &obj) const {
-        return this->term == obj.term && this->distance == obj.distance && this->count == obj.count;
-    }
-
     int GetHashCode() const {
         return std::hash<xstring>{}(this->term);
     }
@@ -323,8 +300,20 @@ public:
         return XL("{") + term + XL(", ") + to_xstring(distance) + XL(", ") + to_xstring(count) + XL("}");
     }
 
-    static bool compare(const SuggestItem &s1, const SuggestItem &s2) {
-        return s1.CompareTo(s2) < 0;
+    bool operator< (const SuggestItem& s2) const {
+        if (this->distance != s2.distance) {
+            return this->distance < s2.distance;
+        }
+
+        if (this->count != s2.count) {
+            return this->count > s2.count;
+        }
+
+        return this->term < s2.term;
+    }
+
+    bool operator== (const SuggestItem& s2) const {
+        return this->distance == s2.distance && this->count == s2.count && this->term == s2.term;
     }
 
     void set(const SuggestItem &exam) {

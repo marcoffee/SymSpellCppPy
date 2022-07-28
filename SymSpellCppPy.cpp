@@ -159,12 +159,8 @@ PYBIND11_MODULE(SymSpellCppPy, m) {
 
     py::class_<SuggestItem>(m, "SuggestItem")
             .def(py::init<xstring, int, int64_t>())
-            .def("__eq__", [](const SuggestItem &a, const SuggestItem &b) {
-                return a.Equals(b);
-            }, "Compare ==")
-            .def("__lt__", [](const SuggestItem &a, const SuggestItem &b) {
-                return SuggestItem::compare(a, b);
-            }, "Order by distance ascending, then by frequency count descending.")
+            .def(py::self == py::self, "Compare ==")
+            .def(py::self < py::self, "Order by distance ascending, then by frequency count descending.")
             .def("__repr__",
                  [](const SuggestItem &a) {
                      return a.term + ", " + std::to_string(a.distance) + ", " + std::to_string(a.count);
