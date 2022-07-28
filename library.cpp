@@ -559,8 +559,9 @@ namespace symspellcpppy {
             suggestions = Lookup(termList1[i], Top, editDistanceMax);
 
             if ((i > 0) && !lastCombi) {
-                std::vector<SuggestItem> suggestionsCombi = Lookup(termList1[i - 1] + termList1[i], Top,
-                                                                   editDistanceMax);
+                std::vector<SuggestItem> suggestionsCombi = Lookup(
+                    Helpers::strings_join(termList1[i - 1], termList1[i]), Top, editDistanceMax
+                );
 
                 if (!suggestionsCombi.empty()) {
                     SuggestItem& suggested = suggestionsCombi.front();
@@ -609,15 +610,10 @@ namespace symspellcpppy {
                             std::vector<SuggestItem> suggestions2 = Lookup(part2, Top, editDistanceMax);
 
                             if (!suggestions2.empty()) {
-                                SuggestItem suggestionSplit = SuggestItem();
-
-                                suggestionSplit.term.reserve(
-                                    suggestions1[0].term.size() + 1 + suggestions2[0].term.size()
+                                SuggestItem suggestionSplit = SuggestItem(
+                                    Helpers::strings_join(suggestions1[0].term, XL(' '), suggestions2[0].term),
+                                    0, 0
                                 );
-
-                                suggestionSplit.term.append(suggestions1[0].term);
-                                suggestionSplit.term.push_back(XL(' '));
-                                suggestionSplit.term.append(suggestions2[0].term);
 
                                 const int compared_distance = distanceComparer.Compare(
                                     termList1[i], suggestionSplit.term, editDistanceMax

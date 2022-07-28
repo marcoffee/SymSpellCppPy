@@ -128,6 +128,43 @@ public:
         return out;
     }
 
+    constexpr static void strings_append (xstring& out) {}
+    constexpr static size_t strings_size () { return 0; }
+
+    template <typename T1, typename... Args>
+    constexpr static size_t strings_size (T1 const& str, Args&&... strings) {
+        size_t size = strings_size(std::forward<Args>(strings)...);
+
+        if constexpr (std::is_same_v<T1, xchar>) {
+            ++size;
+
+        } else {
+            size += str.size();
+        }
+
+        return size;
+    }
+
+    template <typename T1, typename... Args>
+    inline static void strings_append (xstring& out, T1 const& str, Args&&... strings) {
+        if constexpr (std::is_same_v<T1, xchar>) {
+            out.push_back(str);
+
+        } else {
+            out.append(str);
+        }
+
+        strings_append(out, std::forward<Args>(strings)...);
+    }
+
+    template <typename... Args>
+    inline static xstring strings_join (Args&&... strings) {
+        xstring out;
+        out.reserve(strings_size(std::forward<Args>(strings)...));
+        strings_append(out, std::forward<Args>(strings)...);
+        return out;
+    }
+
     static bool file_exists (const std::string& name) {
         struct stat buffer;
         return (stat (name.c_str(), &buffer) == 0);
