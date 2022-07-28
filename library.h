@@ -138,6 +138,26 @@ namespace symspellcpppy {
 
         int EntryCount() const;
 
+        bool operator== (SymSpell const& ssp) const {
+            return (
+                (maxDictionaryEditDistance == ssp.maxDictionaryEditDistance) &&
+                (prefixLength == ssp.prefixLength) &&
+                (countThreshold == ssp.countThreshold) &&
+                (compactMask == ssp.compactMask) &&
+                (distanceAlgorithm == ssp.distanceAlgorithm) &&
+                (maxDictionaryWordLength == ssp.maxDictionaryWordLength) &&
+                // There is no need to compare deletes
+                (words == ssp.words) &&
+                (belowThresholdWords == ssp.belowThresholdWords) &&
+                (bigrams == ssp.bigrams) &&
+                (bigramCountMin == ssp.bigramCountMin)
+            );
+        };
+
+        bool operator!= (SymSpell const& ssp) const {
+            return !(*this == ssp);
+        }
+
         /// <summary>Create a new instanc of SymSpell.</summary>
         /// <remarks>Specifying ann accurate initialCapacity is not essential,
         /// but it can help speed up processing by alleviating the need for

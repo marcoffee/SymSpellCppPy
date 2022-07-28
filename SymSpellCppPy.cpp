@@ -4,6 +4,7 @@
 
 #include <filesystem>
 #include <pybind11/pybind11.h>
+#include <pybind11/operators.h>
 #include <pybind11/stl.h>
 #include <pybind11/stl/filesystem.h>
 #include "library.h"
@@ -198,6 +199,8 @@ PYBIND11_MODULE(SymSpellCppPy, m) {
                  py::arg("compact_level") = DEFAULT_COMPACT_LEVEL,
                  py::arg("distance_algorithm") = DEFAULT_DISTANCE_ALGORITHM
             )
+            .def(py::self == py::self, "Compare ==")
+            .def(py::self != py::self, "Compare !=")
             .def("__repr__", [](const symspellcpppy::SymSpell &sym) {
                     std::stringstream out;
                     out << sym;
