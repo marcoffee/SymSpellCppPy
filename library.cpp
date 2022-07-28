@@ -622,7 +622,7 @@ namespace symspellcpppy {
                                 if (bigram_it != bigrams.end()) {
                                     suggestionSplit.count = bigram_it.value();
                                     if (!suggestions.empty()) {
-                                        if ((suggestions1[0].term + suggestions2[0].term == termList1[i])) {
+                                        if (Helpers::StringIsUnion(termList1[i], suggestions1[0].term, suggestions2[0].term)) {
                                             suggestionSplit.count = std::max(suggestionSplit.count,
                                                                              suggestions[0].count + 2);
                                         } else if ((suggestions1[0].term == suggestions[0].term) ||
@@ -630,7 +630,7 @@ namespace symspellcpppy {
                                             suggestionSplit.count = std::max(suggestionSplit.count,
                                                                              suggestions[0].count + 1);
                                         }
-                                    } else if ((suggestions1[0].term + suggestions2[0].term == termList1[i])) {
+                                    } else if (Helpers::StringIsUnion(termList1[i], suggestions1[0].term, suggestions2[0].term)) {
                                         suggestionSplit.count = std::max(suggestionSplit.count,
                                                                          std::max(suggestions1[0].count,
                                                                                   suggestions2[0].count) +

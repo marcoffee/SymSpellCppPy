@@ -82,6 +82,14 @@ public:
         }
     }
 
+    static bool StringIsUnion(const xstring_view& string, const xstring_view& left, const xstring_view& right) {
+        return (
+            (string.size() == left.size() + right.size()) &&
+            (string.substr(0, left.size()) == left) &&
+            (string.substr(left.size()) == right)
+        );
+    }
+
     static double ToSimilarity(int distance, int length) {
         return (distance < 0) ? -1 : 1 - (distance / (double) length);
     }
