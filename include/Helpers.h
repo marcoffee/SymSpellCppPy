@@ -43,13 +43,19 @@ public:
         REPLACE};
 
     static const Value getType(const std::string &type) {
-        const std::map<std::string, Value> optionStrings {
-                { "insert", Value::INSERT },
-                { "delete", Value::DELETE },
-                { "equal", Value::EQUAL },
-                { "replace", Value::REPLACE },
-        };
-        return optionStrings.at(type);
+        if (type[0] == 'i') {
+            return Value::INSERT;
+        }
+
+        if (type[0] == 'd') {
+            return Value::DELETE;
+        }
+
+        if (type[0] == 'e') {
+            return Value::EQUAL;
+        }
+
+        return Value::REPLACE;
     }
 };
 
@@ -141,9 +147,9 @@ public:
 
         for (int i = 0; i < text_w_casing.size(); ++i) {
             if (is_xupper(text_w_casing[i])) {
-                response_string += to_xupper(text_wo_casing[i]);
+                response_string.push_back(to_xupper(text_wo_casing[i]));
             } else {
-                response_string += to_xlower(text_wo_casing[i]);
+                response_string.push_back(to_xlower(text_wo_casing[i]));
             }
         }
     }
@@ -159,20 +165,19 @@ public:
         }
 
         xstring const lower_text_w_casing = string_lower(text_w_casing);
-        auto foo = difflib::MakeSequenceMatcher(xstring_view(lower_text_w_casing), text_wo_casing);
+        auto diff = difflib::MakeSequenceMatcher(xstring_view(lower_text_w_casing), text_wo_casing);
 
         xstring response_string;
         response_string.reserve(text_wo_casing.size());
 
-        for (auto const& [ tag, i1, i2, j1, j2 ] : foo.get_opcodes()) {
-            int _max_length;
+        for (auto const& [ tag, i1, i2, j1, j2 ] : diff.get_opcodes()) {
             xstring_view const op_w_casing = text_w_casing.substr(i1, i2 - i1);
             xstring_view const op_wo_casing = text_wo_casing.substr(j1, j2 - j1);
 
             switch (DifflibOptions::getType(tag)) {
                 case DifflibOptions::Value::INSERT:
                     if (i1 == 0 or (text_w_casing[i1 - 1] == ' ')) {
-                        if (text_w_casing[i1] and is_xupper(text_w_casing[i1])) {
+                        if (text_w_casing[i1] && is_xupper(text_w_casing[i1])) {
                             string_upper(op_wo_casing, response_string);
                         } else {
                             string_lower(op_wo_casing, response_string);
@@ -185,30 +190,37 @@ public:
                         }
                     }
                     break;
+
                 case DifflibOptions::Value::DELETE:
                     break;
+
                 case DifflibOptions::Value::REPLACE:
                     if (op_w_casing.size() == op_wo_casing.size()) {
                         transfer_casing_for_matching_text(op_w_casing, op_wo_casing, response_string);
 
                     } else {
                         bool last_is_upper = false;
-                        _max_length = std::max(op_w_casing.size(), op_wo_casing.size());
-                        for (int i = 0; i < _max_length; ++i) {
-                            if (i < op_w_casing.size()) {
-                                if (is_xupper(op_w_casing[i])) {
-                                    response_string += to_xupper(op_wo_casing[i]);
-                                    last_is_upper = true;
-                                } else {
-                                    response_string += to_xlower(op_wo_casing[i]);
-                                    last_is_upper = false;
-                                }
-                            } else {
-                                response_string += last_is_upper ? to_xupper(op_wo_casing[i]) : to_xlower(op_wo_casing[i]);
-                            }
+                        const int min_length = std::min(op_w_casing.size(), op_wo_casing.size());
+
+                        for (int i = 0; i < min_length; ++i) {
+                            last_is_upper = is_xupper(op_w_casing[i]);
+
+                            response_string.push_back(
+                                last_is_upper ? to_xupper(op_wo_casing[i]) : to_xlower(op_wo_casing[i])
+                            );
+                        }
+
+                        xstring_view const remain_wo_casing = op_wo_casing.substr(min_length);
+
+                        if (last_is_upper) {
+                            string_upper(remain_wo_casing, response_string);
+
+                        } else {
+                            string_lower(remain_wo_casing, response_string);
                         }
                     }
                     break;
+
                 case DifflibOptions::Value::EQUAL :
                     response_string.append(op_w_casing);
                     break;
