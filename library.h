@@ -175,7 +175,7 @@ namespace symspellcpppy {
         bool CreateDictionaryEntry(const xstring_view &key, int64_t count);
         bool CreateDictionaryEntry(const xstring_view &key, int64_t count, SuggestionStage &staging);
 
-        bool DeleteDictionaryEntry(const xstring &key);
+        bool DeleteDictionaryEntry(const xstring_view &key);
 
         /// <summary>Load multiple dictionary entries from a file of word/frequency count pairs</summary>
         /// <remarks>Merges with any dictionary data already loaded.</remarks>

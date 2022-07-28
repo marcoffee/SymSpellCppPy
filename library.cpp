@@ -134,30 +134,51 @@ namespace symspellcpppy {
         return true;
     }
 
-    bool SymSpell::DeleteDictionaryEntry(const xstring &key) {
+    bool SymSpell::DeleteDictionaryEntry(const xstring_view &key) {
         auto wordsFinded = words.find(key);
-        if (wordsFinded != words.end()) {
-            words.erase(wordsFinded);
-            if (wordsFinded.key_size() == maxDictionaryWordLength) {
-                int max_size = 0;
-                for (auto it = words.begin(); it != words.end(); ++it) {
-                    max_size = std::max(static_cast<int>(it.key_size()), max_size);
-                }
-                maxDictionaryWordLength = max_size;
-            }
-            auto edits = EditsPrefix(key);
-            for (auto it = edits.begin(); it != edits.end(); ++it) {
-                int deleteHash = GetstringHash(it.key_sv());
-                auto deletesFinded = deletes.find(deleteHash);
-                if (deletesFinded != deletes.end()) {
-                    auto delete_vec = deletesFinded->second;
-                    auto it = std::find(delete_vec.begin(), delete_vec.end(), key);
-                    if (it < delete_vec.end()) delete_vec.erase(it);
-                }
-            }
-            return true;
+
+        if (wordsFinded == words.end()) {
+            return false;
         }
-        return false;
+
+        words.erase(wordsFinded);
+
+        if (key.size() == maxDictionaryWordLength) {
+            maxDictionaryWordLength = 0;
+
+            for (auto it = words.cbegin(); it != words.cend(); ++it) {
+                maxDictionaryWordLength = std::max<int>(it.key_size(), maxDictionaryWordLength);
+            }
+        }
+
+        auto const edits = EditsPrefix(key);
+
+        for (auto it = edits.cbegin(); it != edits.cend(); ++it) {
+            auto deletesFinded = deletes.find(GetstringHash(it.key_sv()));
+
+            if (deletesFinded == deletes.end()) {
+                continue;
+            }
+
+            auto& delete_vec = deletesFinded.value();
+            auto del_it = std::find(delete_vec.begin(), delete_vec.end(), key);
+
+            if (del_it != delete_vec.end()) {
+                auto last_it = delete_vec.end() - 1;
+
+                if (del_it != last_it) {
+                    *del_it = std::move(*last_it);
+                }
+
+                delete_vec.pop_back();
+            }
+
+            if (delete_vec.empty()) {
+                deletes.erase(deletesFinded);
+            }
+        }
+
+        return true;
     }
 
     bool
