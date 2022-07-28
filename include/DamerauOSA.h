@@ -27,12 +27,12 @@ public:
         basePrevChar1Costs = std::vector<int>(expectedMaxstringLength, 0);
     }
 
-    double Distance(const xstring& string1, const xstring& string2) override {
+    double Distance(const xstring_view& string1, const xstring_view& string2) override {
         if (string1.empty()) return string2.size();
         if (string2.empty()) return string1.size();
 
-        const xstring& str1 = (string1.size() > string2.size()) ? string2 : string1;
-        const xstring& str2 = (string1.size() > string2.size()) ? string1 : string2;
+        const xstring_view& str1 = (string1.size() > string2.size()) ? string2 : string1;
+        const xstring_view& str2 = (string1.size() > string2.size()) ? string1 : string2;
 
         int len1, len2, start;
         Helpers::PrefixSuffixPrep(str1, str2, len1, len2, start);
@@ -45,14 +45,14 @@ public:
         return Distance(str1, str2, len1, len2, start, baseChar1Costs, basePrevChar1Costs);
     }
 
-    double Distance(const xstring& string1, const xstring& string2, double maxDistance) override {
+    double Distance(const xstring_view& string1, const xstring_view& string2, double maxDistance) override {
         if (string1.empty() || string2.empty()) return Helpers::NullDistanceResults(string1, string2, maxDistance);
         if (maxDistance <= 0) return (string1 == string2) ? 0 : -1;
         maxDistance = ceil(maxDistance);
         int iMaxDistance = (maxDistance <= INT_MAX) ? (int) maxDistance : INT_MAX;
 
-        const xstring& str1 = (string1.size() > string2.size()) ? string2 : string1;
-        const xstring& str2 = (string1.size() > string2.size()) ? string1 : string2;
+        const xstring_view& str1 = (string1.size() > string2.size()) ? string2 : string1;
+        const xstring_view& str2 = (string1.size() > string2.size()) ? string1 : string2;
 
         if (str2.size() - str1.size() > iMaxDistance) return -1;
 
@@ -70,12 +70,12 @@ public:
         return Distance(str1, str2, len1, len2, start, baseChar1Costs, basePrevChar1Costs);
     }
 
-    double Similarity(const xstring& string1, const xstring& string2) override {
+    double Similarity(const xstring_view& string1, const xstring_view& string2) override {
         if (string1.empty()) return (string2.empty()) ? 1 : 0;
         if (string2.empty()) return 0;
 
-        const xstring& str1 = (string1.size() > string2.size()) ? string2 : string1;
-        const xstring& str2 = (string1.size() > string2.size()) ? string1 : string2;
+        const xstring_view& str1 = (string1.size() > string2.size()) ? string2 : string1;
+        const xstring_view& str2 = (string1.size() > string2.size()) ? string1 : string2;
 
         int len1, len2, start;
         Helpers::PrefixSuffixPrep(str1, str2, len1, len2, start);
@@ -89,13 +89,13 @@ public:
                                      str2.size());
     }
 
-    double Similarity(const xstring& string1, const xstring& string2, double minSimilarity) override {
+    double Similarity(const xstring_view& string1, const xstring_view& string2, double minSimilarity) override {
         if (minSimilarity < 0 || minSimilarity > 1)
             throw std::invalid_argument("minSimilarity must be in range 0 to 1.0");
         if (string1.empty() || string2.empty()) return Helpers::NullSimilarityResults(string1, string2, minSimilarity);
 
-        const xstring& str1 = (string1.size() > string2.size()) ? string2 : string1;
-        const xstring& str2 = (string1.size() > string2.size()) ? string1 : string2;
+        const xstring_view& str1 = (string1.size() > string2.size()) ? string2 : string1;
+        const xstring_view& str2 = (string1.size() > string2.size()) ? string1 : string2;
 
         int iMaxDistance = Helpers::ToDistance(minSimilarity, str2.size());
         if (str2.size() - str1.size() > iMaxDistance) return -1;
@@ -119,7 +119,7 @@ public:
     }
 
     static int
-    Distance(const xstring& string1, const xstring& string2, int len1, int len2, int start, std::vector<int>& char1Costs,
+    Distance(const xstring_view& string1, const xstring_view& string2, int len1, int len2, int start, std::vector<int>& char1Costs,
              std::vector<int>& prevChar1Costs) {
         std::iota(char1Costs.begin(), char1Costs.end(), 1);
 
@@ -156,7 +156,7 @@ public:
         return currentCost;
     }
 
-    static int Distance(const xstring& string1, const xstring& string2, int len1, int len2, int start, int maxDistance,
+    static int Distance(const xstring_view& string1, const xstring_view& string2, int len1, int len2, int start, int maxDistance,
                         std::vector<int>& char1Costs, std::vector<int>& prevChar1Costs) {
         std::iota(char1Costs.begin(), char1Costs.begin() + maxDistance, 1);
         std::fill(char1Costs.begin() + maxDistance, char1Costs.end(), maxDistance + 1);

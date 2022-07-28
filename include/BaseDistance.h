@@ -10,7 +10,7 @@
 
 class BaseDistance {
 public:
-    virtual double Distance(const xstring& string1, const xstring& string2) = 0;
+    virtual double Distance(const xstring_view& string1, const xstring_view& string2) = 0;
 
-    virtual double Distance(const xstring& string1, const xstring& string2, double maxDistance) = 0;
+    virtual double Distance(const xstring_view& string1, const xstring_view& string2, double maxDistance) = 0;
 };

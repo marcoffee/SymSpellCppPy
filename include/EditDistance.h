@@ -47,7 +47,7 @@ public:
         }
     }
 
-    int Compare(const xstring &string1, const xstring &string2, double maxDistance) {
+    int Compare(const xstring_view &string1, const xstring_view &string2, double maxDistance) {
         return (int) this->distanceComparer->Distance(string1, string2, maxDistance);
     }
 };
