@@ -490,7 +490,7 @@ namespace symspellcpppy {
     }
 
     void
-    SymSpell::Edits(const xstring &word, int editDistance, tsl::array_set<xchar>& deleteWords) const {
+    SymSpell::Edits(const xstring_view &word, int editDistance, tsl::array_set<xchar>& deleteWords) const {
         editDistance++;
 
         if (word.size() > 1) {
@@ -508,12 +508,12 @@ namespace symspellcpppy {
         }
     }
 
-    tsl::array_set<xchar> SymSpell::EditsPrefix(const xstring& key) const {
+    tsl::array_set<xchar> SymSpell::EditsPrefix(const xstring_view& key) const {
         tsl::array_set<xchar> m;
 
         if (key.size() <= maxDictionaryEditDistance) m.insert(XL(""));
         if (key.size() > prefixLength) {
-            const xstring sub_key = key.substr(0, prefixLength);
+            const xstring_view sub_key = key.substr(0, prefixLength);
             m.insert(sub_key);
             Edits(sub_key, 0, m);
         } else {

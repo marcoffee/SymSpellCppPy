@@ -262,9 +262,9 @@ namespace symspellcpppy {
         static std::vector<xstring> ParseWords(const xstring &text);
 
         void
-        Edits(const xstring &word, int editDistance, tsl::array_set<xchar>& deleteWords) const;
+        Edits(const xstring_view &word, int editDistance, tsl::array_set<xchar>& deleteWords) const;
 
-        tsl::array_set<xchar> EditsPrefix(const xstring& key) const;
+        tsl::array_set<xchar> EditsPrefix(const xstring_view& key) const;
 
         int GetstringHash(const xstring_view& s) const;
 
