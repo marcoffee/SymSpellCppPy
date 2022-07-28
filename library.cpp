@@ -292,20 +292,20 @@ namespace symspellcpppy {
         staging.CommitTo(deletes);
     }
 
-    std::vector<SuggestItem> SymSpell::Lookup(const xstring& input, Verbosity verbosity) const {
+    std::vector<SuggestItem> SymSpell::Lookup(const xstring_view& input, Verbosity verbosity) const {
         return Lookup(input, verbosity, maxDictionaryEditDistance, false, false);
     }
 
-    std::vector<SuggestItem> SymSpell::Lookup(const xstring& input, Verbosity verbosity, int maxEditDistance) const {
+    std::vector<SuggestItem> SymSpell::Lookup(const xstring_view& input, Verbosity verbosity, int maxEditDistance) const {
         return Lookup(input, verbosity, maxEditDistance, false, false);
     }
 
-    std::vector<SuggestItem> SymSpell::Lookup(const xstring& input, Verbosity verbosity, int maxEditDistance, bool includeUnknown) const {
+    std::vector<SuggestItem> SymSpell::Lookup(const xstring_view& input, Verbosity verbosity, int maxEditDistance, bool includeUnknown) const {
         return Lookup(input, verbosity, maxEditDistance, includeUnknown, false);
     }
 
     std::vector<SuggestItem>
-    SymSpell::Lookup(const xstring& original_input, Verbosity verbosity, int maxEditDistance, bool includeUnknown,
+    SymSpell::Lookup(const xstring_view& original_input, Verbosity verbosity, int maxEditDistance, bool includeUnknown,
                      bool transferCasing) const {
         if (deletes.empty()) return std::vector<SuggestItem> {}; // Dictionary is empty
 
@@ -315,10 +315,10 @@ namespace symspellcpppy {
         xstring lower_input;
 
         if (transferCasing) {
-            lower_input = Helpers::string_lower(original_input);
+            Helpers::string_lower(original_input, lower_input);
         }
 
-        const xstring& input = transferCasing ? lower_input : original_input;
+        const xstring_view& input = transferCasing ? lower_input : original_input;
 
         std::vector<SuggestItem> suggestions;
         const int inputLen = input.size();

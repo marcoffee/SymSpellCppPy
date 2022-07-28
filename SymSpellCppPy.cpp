@@ -243,20 +243,20 @@ PYBIND11_MODULE(SymSpellCppPy, m) {
                  py::arg("corpus"))
             .def("purge_below_threshold_words", &symspellcpppy::SymSpell::PurgeBelowThresholdWords,
                  "Remove all below threshold words from the dictionary.")
-            .def("lookup", py::overload_cast<const xstring &, symspellcpppy::Verbosity>(
+            .def("lookup", py::overload_cast<const xstring_view &, symspellcpppy::Verbosity>(
                     &symspellcpppy::SymSpell::Lookup, py::const_),
                  " Find suggested spellings for a given input word, using the maximum\n"
                  "    edit distance specified during construction of the SymSpell dictionary.",
                  py::arg("input"),
                  py::arg("verbosity"))
-            .def("lookup", py::overload_cast<const xstring &, symspellcpppy::Verbosity, int>(
+            .def("lookup", py::overload_cast<const xstring_view &, symspellcpppy::Verbosity, int>(
                     &symspellcpppy::SymSpell::Lookup, py::const_),
                  " Find suggested spellings for a given input word, using the maximum\n"
                  "    edit distance provided to the function.",
                  py::arg("input"),
                  py::arg("verbosity"),
                  py::arg("max_edit_distance"))
-            .def("lookup", py::overload_cast<const xstring &, symspellcpppy::Verbosity, int, bool>(
+            .def("lookup", py::overload_cast<const xstring_view &, symspellcpppy::Verbosity, int, bool>(
                     &symspellcpppy::SymSpell::Lookup, py::const_),
                  " Find suggested spellings for a given input word, using the maximum\n"
                  "    edit distance provided to the function and include input word in suggestions, if no words within edit distance found.",
@@ -264,7 +264,7 @@ PYBIND11_MODULE(SymSpellCppPy, m) {
                  py::arg("verbosity"),
                  py::arg("max_edit_distance"),
                  py::arg("include_unknown"))
-            .def("lookup", py::overload_cast<const xstring &, symspellcpppy::Verbosity, int, bool, bool>(
+            .def("lookup", py::overload_cast<const xstring_view &, symspellcpppy::Verbosity, int, bool, bool>(
                     &symspellcpppy::SymSpell::Lookup, py::const_),
                  " Find suggested spellings for a given input word, using the maximum\n"
                  "    edit distance provided to the function and include input word in suggestions, if no words within edit distance found & preserve transfer casing.",

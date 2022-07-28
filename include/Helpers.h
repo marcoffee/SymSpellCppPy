@@ -298,11 +298,8 @@ public:
 
     SuggestItem() = default;
 
-    SuggestItem(const xstring &term, int distance, int64_t count) {
-        this->term = term;
-        this->distance = distance;
-        this->count = count;
-    }
+    SuggestItem(const xstring_view &term, int distance, int64_t count)
+    : term(term), distance(distance), count(count) {}
 
     int CompareTo(const SuggestItem &other) const {
         int disCom = Helpers::CompareTo(this->distance, other.distance);
