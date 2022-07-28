@@ -476,14 +476,16 @@ namespace symspellcpppy {
         return true;
     }
 
-    std::vector<xstring> SymSpell::ParseWords(const xstring &text) {
+    std::vector<xstring> SymSpell::ParseWords(const xstring_view &text) {
         xsmatch m;
         std::vector<xstring> matches;
-        xstring::const_iterator ptr(text.cbegin());
+        xchar const* begin = text.data();
+        xchar const* const end = begin + text.size();
 
-        while (regex_search(ptr, text.cend(), m, wordsRegex)) {
-            matches.emplace_back(Helpers::string_lower(m[0].str()));
-            ptr = m.suffix().first;
+        while (regex_search(begin, end, m, wordsRegex)) {
+            auto const sub_m = m[0];
+            matches.emplace_back(Helpers::string_lower(xstring_view(sub_m.first, sub_m.length())));
+            begin = sub_m.second;
         }
 
         return matches;

@@ -20,7 +20,7 @@
 #	define xstringstream std::wstringstream
 #	define isxspace std::iswspace
 #	define xregex std::wregex
-#	define xsmatch std::wsmatch
+#	define xsmatch std::match_results<xchar const*>
 #	define to_xstring std::to_wstring
 #	define XL(x) L##x
 #	define xcout std::wcout
@@ -36,7 +36,7 @@
 #	define xstringstream std::stringstream
 #	define isxspace std::isspace
 #	define xregex std::regex
-#	define xsmatch std::smatch
+#	define xsmatch std::match_results<xchar const*>
 #	define to_xstring std::to_string
 #	define XL(x) x
 #	define xcout std::cout
