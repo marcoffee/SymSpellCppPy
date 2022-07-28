@@ -12,6 +12,7 @@
 #include <cmath>
 #include <climits>
 #include <stdexcept>
+#include <numeric>
 
 class Levenshtein : public BaseDistance, BaseSimilarity {
 private:
@@ -116,7 +117,8 @@ public:
 
     static int
     Distance(const xstring& string1, const xstring& string2, int len1, int len2, int start, std::vector<int> &char1Costs) {
-        for (int j = 0; j < len2;) char1Costs[j] = ++j;
+        std::iota(char1Costs.begin(), char1Costs.end(), 1);
+
         int currentCharCost = 0;
         if (start == 0) {
             for (int i = 0; i < len1; ++i) {
@@ -156,22 +158,22 @@ public:
 
     static int Distance(const xstring& string1, const xstring& string2, int len1, int len2, int start, int maxDistance,
                         std::vector<int> &char1Costs) {
-        int i, j;
-        for (j = 0; j < maxDistance;) char1Costs[j] = ++j;
-        for (; j < len2;) char1Costs[j++] = maxDistance + 1;
+        std::iota(char1Costs.begin(), char1Costs.begin() + maxDistance, 1);
+        std::fill(char1Costs.begin() + maxDistance, char1Costs.end(), maxDistance + 1);
+
         int lenDiff = len2 - len1;
         int jStartOffset = maxDistance - lenDiff;
         int jStart = 0;
         int jEnd = maxDistance;
         int currentCost = 0;
         if (start == 0) {
-            for (i = 0; i < len1; ++i) {
+            for (int i = 0; i < len1; ++i) {
                 xchar char1 = string1[i];
                 int prevChar1Cost, aboveCharCost;
                 prevChar1Cost = aboveCharCost = i;
                 jStart += (i > jStartOffset) ? 1 : 0;
                 jEnd += (jEnd < len2) ? 1 : 0;
-                for (j = jStart; j < jEnd; ++j) {
+                for (int j = jStart; j < jEnd; ++j) {
                     currentCost = prevChar1Cost; // cost on diagonal (substitution)
                     prevChar1Cost = char1Costs[j];
                     if (string2[j] != char1) {
@@ -184,13 +186,13 @@ public:
                 if (char1Costs[i + lenDiff] > maxDistance) return -1;
             }
         } else {
-            for (i = 0; i < len1; ++i) {
+            for (int i = 0; i < len1; ++i) {
                 xchar char1 = string1[start + i];
                 int prevChar1Cost, aboveCharCost;
                 prevChar1Cost = aboveCharCost = i;
                 jStart += (i > jStartOffset) ? 1 : 0;
                 jEnd += (jEnd < len2) ? 1 : 0;
-                for (j = jStart; j < jEnd; ++j) {
+                for (int j = jStart; j < jEnd; ++j) {
                     currentCost = prevChar1Cost; // cost on diagonal (substitution)
                     prevChar1Cost = char1Costs[j];
                     if (string2[start + j] != char1) {

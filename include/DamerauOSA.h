@@ -11,6 +11,7 @@
 #include <cmath>
 #include <climits>
 #include <stdexcept>
+#include <numeric>
 
 class DamerauOSA : public BaseDistance, BaseSimilarity {
 private:
@@ -120,8 +121,8 @@ public:
     static int
     Distance(const xstring& string1, const xstring& string2, int len1, int len2, int start, std::vector<int>& char1Costs,
              std::vector<int>& prevChar1Costs) {
-        int j;
-        for (j = 0; j < len2; j++) char1Costs[j] = j + 1;
+        std::iota(char1Costs.begin(), char1Costs.end(), 1);
+
         xchar char1 = XL(' ');
         int currentCost = 0;
         for (int i = 0; i < len1; ++i) {
@@ -131,7 +132,7 @@ public:
             int leftCharCost, aboveCharCost;
             leftCharCost = aboveCharCost = i;
             int nextTransCost = 0;
-            for (j = 0; j < len2; ++j) {
+            for (int j = 0; j < len2; ++j) {
                 int thisTransCost = nextTransCost;
                 nextTransCost = prevChar1Costs[j];
                 prevChar1Costs[j] = currentCost = leftCharCost; // cost of diagonal (substitution)
@@ -157,17 +158,16 @@ public:
 
     static int Distance(const xstring& string1, const xstring& string2, int len1, int len2, int start, int maxDistance,
                         std::vector<int>& char1Costs, std::vector<int>& prevChar1Costs) {
-        int i, j;
-        for (j = 0; j < maxDistance; j++)
-            char1Costs[j] = j + 1;
-        for (; j < len2;) char1Costs[j++] = maxDistance + 1;
+        std::iota(char1Costs.begin(), char1Costs.begin() + maxDistance, 1);
+        std::fill(char1Costs.begin() + maxDistance, char1Costs.end(), maxDistance + 1);
+
         int lenDiff = len2 - len1;
         int jStartOffset = maxDistance - lenDiff;
         int jStart = 0;
         int jEnd = maxDistance;
         xchar char1 = XL(' ');
         int currentCost = 0;
-        for (i = 0; i < len1; ++i) {
+        for (int i = 0; i < len1; ++i) {
             xchar prevChar1 = char1;
             char1 = string1[start + i];
             xchar char2 = XL(' ');
@@ -176,7 +176,7 @@ public:
             int nextTransCost = 0;
             jStart += (i > jStartOffset) ? 1 : 0;
             jEnd += (jEnd < len2) ? 1 : 0;
-            for (j = jStart; j < jEnd; ++j) {
+            for (int j = jStart; j < jEnd; ++j) {
                 int thisTransCost = nextTransCost;
                 nextTransCost = prevChar1Costs[j];
                 prevChar1Costs[j] = currentCost = leftCharCost; // cost on diagonal (substitution)
