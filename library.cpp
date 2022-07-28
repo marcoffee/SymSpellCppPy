@@ -60,7 +60,7 @@ namespace symspellcpppy {
         deletes.max_load_factor(0.9);
     }
 
-    bool SymSpell::CreateDictionaryEntryCheck(const xstring &key, int64_t count) {
+    bool SymSpell::CreateDictionaryEntryCheck(const xstring_view &key, int64_t count) {
         if (count <= 0) {
             if (countThreshold > 0)
                 return false; // no point doing anything if count is zero, as it can't change anything
@@ -102,7 +102,7 @@ namespace symspellcpppy {
         return true;
     }
 
-    bool SymSpell::CreateDictionaryEntry(const xstring &key, int64_t count) {
+    bool SymSpell::CreateDictionaryEntry(const xstring_view &key, int64_t count) {
         if (!CreateDictionaryEntryCheck(key, count)) {
             return false;
         }
@@ -118,7 +118,7 @@ namespace symspellcpppy {
         return true;
     }
 
-    bool SymSpell::CreateDictionaryEntry(const xstring &key, int64_t count, SuggestionStage &staging) {
+    bool SymSpell::CreateDictionaryEntry(const xstring_view &key, int64_t count, SuggestionStage &staging) {
         if (!CreateDictionaryEntryCheck(key, count)) {
             return false;
         }

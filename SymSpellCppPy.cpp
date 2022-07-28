@@ -217,7 +217,7 @@ PYBIND11_MODULE(SymSpellCppPy, m) {
             .def("count_threshold", &symspellcpppy::SymSpell::CountThreshold,
                  "Frequency of word so that its considered a valid word for spelling correction.")
             .def("distance_algorithm", &symspellcpppy::SymSpell::GetDistanceAlgorithm, "Distance algorithm used.")
-            .def("create_dictionary_entry", py::overload_cast<const std::string &, int64_t>(
+            .def("create_dictionary_entry", py::overload_cast<const std::string_view &, int64_t>(
                     &symspellcpppy::SymSpell::CreateDictionaryEntry),
                  "Create/Update an entry in the dictionary.", py::arg("key"), py::arg("count"))
             .def("delete_dictionary_entry", &symspellcpppy::SymSpell::DeleteDictionaryEntry,

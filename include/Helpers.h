@@ -225,7 +225,7 @@ public:
     xstring suggestion;
     int next;
 
-    Node (const xstring &suggestion = {}, const int next = -1)
+    Node (const xstring_view &suggestion = {}, const int next = -1)
     : suggestion(suggestion), next(next) {}
 };
 
@@ -257,7 +257,7 @@ public:
         Nodes.clear();
     }
 
-    void Add(int deleteHash, const xstring &suggestion) {
+    void Add(int deleteHash, const xstring_view &suggestion) {
         Entry& entry = Deletes.try_emplace(deleteHash, 0).first.value();
         int const next = entry.first;  // 1st semantic errors, this should not be Nodes.Count
 

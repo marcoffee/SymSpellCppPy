@@ -121,7 +121,7 @@ namespace symspellcpppy {
         static const xregex wordsRegex;
         static constexpr std::string_view serializedHeader = "SymSpellCppPy";
 
-        bool CreateDictionaryEntryCheck(const xstring &key, int64_t count);
+        bool CreateDictionaryEntryCheck(const xstring_view &key, int64_t count);
 
     public:
         int MaxDictionaryEditDistance() const;
@@ -173,8 +173,8 @@ namespace symspellcpppy {
                           unsigned char compactLevel = DEFAULT_COMPACT_LEVEL,
                           DistanceAlgorithm distanceAlgorithm = DEFAULT_DISTANCE_ALGORITHM);
 
-        bool CreateDictionaryEntry(const xstring &key, int64_t count);
-        bool CreateDictionaryEntry(const xstring &key, int64_t count, SuggestionStage &staging);
+        bool CreateDictionaryEntry(const xstring_view &key, int64_t count);
+        bool CreateDictionaryEntry(const xstring_view &key, int64_t count, SuggestionStage &staging);
 
         bool DeleteDictionaryEntry(const xstring &key);
 
