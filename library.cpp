@@ -440,12 +440,15 @@ namespace symspellcpppy {
 
                 if ((lengthDiff < maxEditDistance) && (candidateLen <= prefixLength)) {
                     if (verbosity != All && lengthDiff >= maxEditDistance2) continue;
+                    xstring del;
 
                     for (int i = 0; i < candidateLen; i++) {
-                        xstring del(candidate);
+                        del.assign(candidate);
                         del.erase(i, 1);
 
-                        if (hashset1.insert(del).second) { candidates.push_back(del); }
+                        if (hashset1.insert(del).second) {
+                            candidates.emplace_back(std::move(del));
+                        }
                     }
                 }
             }//end while
