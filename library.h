@@ -40,15 +40,14 @@ constexpr auto MAXLONG = MAXINT;
 // 3. multiple independent input terms with/without spelling errors
 namespace symspellcpppy {
     static inline void ltrim(xstring &s) {
-
-        s.erase(s.begin(), find_if(s.begin(), s.end(), [](xchar ch) {
-            return !isspace(ch);
+        s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](xchar ch) {
+            return !isxspace(ch);
         }));
     }
 
     static inline void rtrim(xstring &s) {
-        s.erase(find_if(s.rbegin(), s.rend(), [](xchar ch) {
-            return !isspace(ch);
+        s.erase(std::find_if(s.rbegin(), s.rend(), [](xchar ch) {
+            return !isxspace(ch);
         }).base(), s.end());
     }
 
