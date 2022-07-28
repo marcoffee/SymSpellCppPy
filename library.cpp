@@ -565,28 +565,32 @@ namespace symspellcpppy {
                                                                    editDistanceMax);
 
                 if (!suggestionsCombi.empty()) {
-                    SuggestItem const& best1 = suggestionParts[suggestionParts.size() - 1];
-                    SuggestItem best2 = SuggestItem();
-                    if (!suggestions.empty()) {
-                        best2 = suggestions[0];
-                    } else {
-                        best2.term = termList1[i];
-                        best2.distance = editDistanceMax + 1;
-                        best2.count = (long) ((double) 10 / pow((double) 10, (double) best2.term.size())); // 0;
+                    SuggestItem& suggested = suggestionsCombi.front();
+                    SuggestItem& best1 = suggestionParts.back();
+                    SuggestItem best2_store;
+
+                    if (suggestions.empty()) {
+                        best2_store = SuggestItem(
+                            termList1[i], editDistanceMax + 1,
+                            (long) ((double) 10 / pow((double) 10, (double) termList1[i].size())) // 0;
+                        );
                     }
 
-                    int distance1 = best1.distance + best2.distance;
-                    if ((distance1 >= 0) && ((suggestionsCombi[0].distance + 1 < distance1) ||
-                                             ((suggestionsCombi[0].distance + 1 == distance1) &&
-                                              ((double) suggestionsCombi[0].count >
+                    SuggestItem const& best2 = suggestions.empty() ? best2_store : suggestions[0];
+                    const int distance1 = best1.distance + best2.distance;
+
+                    if ((distance1 >= 0) && ((suggested.distance + 1 < distance1) ||
+                                             ((suggested.distance + 1 == distance1) &&
+                                              ((double) suggested.count >
                                                (double) best1.count / (double) N * (double) best2.count)))) {
-                        suggestionsCombi[0].distance++;
-                        suggestionParts[suggestionParts.size() - 1] = suggestionsCombi[0];
+                        suggested.distance++;
+                        best1 = std::move(suggested);
                         lastCombi = true;
                         goto nextTerm;
                     }
                 }
             }
+
             lastCombi = false;
 
             if ((!suggestions.empty()) && ((suggestions[0].distance == 0) || (termList1[i].size() == 1))) {
