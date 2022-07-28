@@ -600,16 +600,27 @@ namespace symspellcpppy {
                     for (int j = 1; j < termList1[i].size(); j++) {
                         const xstring part1 = termList1[i].substr(0, j);
                         const xstring part2 = termList1[i].substr(j);
-                        SuggestItem suggestionSplit = SuggestItem();
                         std::vector<SuggestItem> suggestions1 = Lookup(part1, Top, editDistanceMax);
+
                         if (!suggestions1.empty()) {
                             std::vector<SuggestItem> suggestions2 = Lookup(part2, Top, editDistanceMax);
-                            if (!suggestions2.empty()) {
-                                suggestionSplit.term = suggestions1[0].term + XL(" ") + suggestions2[0].term;
 
-                                int distance2 = distanceComparer.Compare(termList1[i], suggestionSplit.term,
-                                                                         editDistanceMax);
-                                if (distance2 < 0) distance2 = editDistanceMax + 1;
+                            if (!suggestions2.empty()) {
+                                SuggestItem suggestionSplit = SuggestItem();
+
+                                suggestionSplit.term.reserve(
+                                    suggestions1[0].term.size() + 1 + suggestions2[0].term.size()
+                                );
+
+                                suggestionSplit.term.append(suggestions1[0].term);
+                                suggestionSplit.term.push_back(XL(' '));
+                                suggestionSplit.term.append(suggestions2[0].term);
+
+                                const int compared_distance = distanceComparer.Compare(
+                                    termList1[i], suggestionSplit.term, editDistanceMax
+                                );
+
+                                const int distance2 = compared_distance < 0 ? editDistanceMax + 1 : compared_distance;
 
                                 if (suggestionSplitBest.count) {
                                     if (distance2 > suggestionSplitBest.distance) continue;
@@ -646,7 +657,7 @@ namespace symspellcpppy {
 
                                 if (suggestionSplitBest.count == 0 ||
                                     (suggestionSplit.count > suggestionSplitBest.count))
-                                    suggestionSplitBest.set(suggestionSplit);
+                                    suggestionSplitBest = std::move(suggestionSplit);
                             }
                         }
                     }
