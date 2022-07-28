@@ -9,7 +9,6 @@
 #define DEFAULT_COMPACT_LEVEL 5
 #define min3(a, b, c) (min(a, min(b, c)))
 #define MAXINT LLONG_MAX
-#define M
 #define MAXLONG MAXINT
 
 #include <fstream>
