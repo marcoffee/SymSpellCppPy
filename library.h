@@ -278,19 +278,19 @@ namespace symspellcpppy {
         /// <summary>Find suggested spellings for a multi-word input string (supports word splitting/merging).</summary>
         /// <param name="input">The string being spell checked.</param>
         /// <returns>A List of SuggestItem object representing suggested correct spellings for the input string.</returns>
-        std::vector<SuggestItem> LookupCompound(const xstring &input) const;
+        std::vector<SuggestItem> LookupCompound(const xstring_view &input) const;
 
         /// <summary>Find suggested spellings for a multi-word input string (supports word splitting/merging).</summary>
         /// <param name="input">The string being spell checked.</param>
         /// <param name="maxEditDistance">The maximum edit distance between input and suggested words.</param>
         /// <returns>A List of SuggestItem object representing suggested correct spellings for the input string.</returns>
-        std::vector<SuggestItem> LookupCompound(const xstring &input, int editDistanceMax) const;
+        std::vector<SuggestItem> LookupCompound(const xstring_view &input, int editDistanceMax) const;
 
         /// <summary>Find suggested spellings for a multi-word input string (supports word splitting/merging).</summary>
         /// <param name="input">The string being spell checked.</param>
         /// <param name="maxEditDistance">The maximum edit distance between input and suggested words.</param>
         /// <returns>A List of SuggestItem object representing suggested correct spellings for the input string.</returns>
-        std::vector<SuggestItem> LookupCompound(const xstring &input, int editDistanceMax, bool transferCasing) const;
+        std::vector<SuggestItem> LookupCompound(const xstring_view &input, int editDistanceMax, bool transferCasing) const;
 
         //######
 

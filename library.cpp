@@ -539,15 +539,15 @@ namespace symspellcpppy {
         return (int) hash;
     }
 
-    std::vector<SuggestItem> SymSpell::LookupCompound(const xstring &input) const {
+    std::vector<SuggestItem> SymSpell::LookupCompound(const xstring_view &input) const {
         return LookupCompound(input, maxDictionaryEditDistance, false);
     }
 
-    std::vector<SuggestItem> SymSpell::LookupCompound(const xstring &input, int editDistanceMax) const {
+    std::vector<SuggestItem> SymSpell::LookupCompound(const xstring_view &input, int editDistanceMax) const {
         return LookupCompound(input, editDistanceMax, false);
     }
 
-    std::vector<SuggestItem> SymSpell::LookupCompound(const xstring &input, int editDistanceMax, bool transferCasing) const {
+    std::vector<SuggestItem> SymSpell::LookupCompound(const xstring_view &input, int editDistanceMax, bool transferCasing) const {
         std::vector<xstring> termList1 = ParseWords(input);
 
         std::vector<SuggestItem> suggestions;     //suggestions for a single term
@@ -687,15 +687,19 @@ namespace symspellcpppy {
 
         double count = N;
         xstring s;
+
         for (const SuggestItem &si : suggestionParts) {
-            s += si.term;
-            s += XL(' ');
+            s.append(si.term);
+            s.push_back(XL(' '));
             count *= (double) si.count / (double) N;
         }
+
         rtrim(s);
+
         if (transferCasing) {
             s = Helpers::transfer_casing_for_similar_text(input, s);
         }
+
         std::vector<SuggestItem> suggestionsLine;
         suggestionsLine.emplace_back(s, distanceComparer.Compare(input, s, MAXINT), (long) count);
         return suggestionsLine;
