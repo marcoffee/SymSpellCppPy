@@ -350,3 +350,5 @@ namespace symspellcpppy {
         }
     };
 }
+
+std::ostream& operator<< (std::ostream&, symspellcpppy::SymSpell const&);

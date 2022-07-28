@@ -16,6 +16,17 @@ enum DistanceAlgorithm {
     DamerauOSADistance
 };
 
+inline std::ostream& operator<< (std::ostream& out, DistanceAlgorithm const& dist) {
+    if (dist == DistanceAlgorithm::LevenshteinDistance) {
+        out << "LevenshteinDistance";
+
+    } else if (dist == DistanceAlgorithm::DamerauOSADistance) {
+        out << "DamerauOSADistance";
+    }
+
+    return out;
+}
+
 class EditDistance {
 private:
     BaseDistance *distanceComparer;

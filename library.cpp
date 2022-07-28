@@ -785,3 +785,18 @@ namespace symspellcpppy {
     }
 
 }
+
+std::ostream& operator<< (std::ostream &out, symspellcpppy::SymSpell const &ssp) {
+    out << "SymSpell(" <<
+        "word_count=" << ssp.WordCount() << ", " <<
+        "entry_count=" << ssp.EntryCount() << ", " <<
+        "count_threshold=" << ssp.CountThreshold() << ", " <<
+        "max_dictionary_edit_distance=" << ssp.MaxDictionaryEditDistance() << ", " <<
+        "prefix_length=" << ssp.PrefixLength() << ", " <<
+        "max_length=" << ssp.MaxLength() << ", " <<
+        "count_threshold=" << ssp.CountThreshold() << ", " <<
+        "distance_algorithm=" << ssp.GetDistanceAlgorithm() <<
+    ')';
+
+    return out;
+}

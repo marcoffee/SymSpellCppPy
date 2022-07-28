@@ -89,6 +89,16 @@ PYBIND11_MODULE(SymSpellCppPy, m) {
                  py::arg("compact_level") = DEFAULT_COMPACT_LEVEL,
                  py::arg("distance_algorithm") = DEFAULT_DISTANCE_ALGORITHM
             )
+            .def("__repr__", [](const symspellcpppy::SymSpell &sym) {
+                    std::stringstream out;
+                    out << sym;
+                    return py::str(std::move(out).str());
+                 })
+            .def("__str__", [](const symspellcpppy::SymSpell &sym) {
+                    std::stringstream out;
+                    out << sym;
+                    return py::str(std::move(out).str());
+                 })
             .def("word_count", &symspellcpppy::SymSpell::WordCount, "Number of words entered.")
             .def("max_length", &symspellcpppy::SymSpell::MaxLength, "Max length of words entered.")
             .def("entry_count", &symspellcpppy::SymSpell::EntryCount, "Total number of deletes formed.")
