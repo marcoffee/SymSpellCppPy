@@ -482,7 +482,7 @@ namespace symspellcpppy {
         xstring::const_iterator ptr(text.cbegin());
 
         while (regex_search(ptr, text.cend(), m, wordsRegex)) {
-            matches.emplace_back(Helpers::string_lower(m[0]));
+            matches.emplace_back(Helpers::string_lower(m[0].str()));
             ptr = m.suffix().first;
         }
 
