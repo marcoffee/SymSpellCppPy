@@ -239,7 +239,9 @@ namespace symspellcpppy {
                 }
 
                 if (i == countIndex) {
-                    Helpers::safe_full_string_to_integer(term, count);
+                    if (!Helpers::safe_full_string_to_integer(term, count)) {
+                        xcerr << "Cannot convert " << term << " to integer" << std::endl;
+                    }
                 }
             }
 

@@ -18,6 +18,7 @@ using xchar = wchar_t;
 #	define to_xstring std::to_wstring
 #	define XL(x) L##x
 #	define xcout std::wcout
+#	define xcerr std::wcerr
 #   define to_xlower ::towlower
 #   define to_xupper ::towupper
 #   define is_xupper std::iswupper
@@ -28,6 +29,7 @@ using xchar = char;
 #	define to_xstring std::to_string
 #	define XL(x) x
 #	define xcout std::cout
+#	define xcerr std::cout
 #   define to_xlower ::tolower
 #   define to_xupper ::toupper
 #   define is_xupper std::isupper
