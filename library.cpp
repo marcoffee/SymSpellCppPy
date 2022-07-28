@@ -35,8 +35,7 @@ namespace symspellcpppy {
                        unsigned char _compactLevel) :
             maxDictionaryEditDistance(_maxDictionaryEditDistance),
             prefixLength(_prefixLength),
-            countThreshold(_countThreshold),
-            initialCapacity(_initialCapacity) {
+            countThreshold(_countThreshold) {
         if (_initialCapacity < 0) throw std::invalid_argument("initial_capacity is too small.");
         if (_maxDictionaryEditDistance < 0)
             throw std::invalid_argument("max_dictionary_edit_distance cannot be negative");
@@ -51,7 +50,7 @@ namespace symspellcpppy {
         maxDictionaryWordLength = 0;
 
         words.max_load_factor(0.9);
-        words.reserve(initialCapacity);
+        words.reserve(_initialCapacity);
 
         deletes.max_load_factor(0.9);
     }

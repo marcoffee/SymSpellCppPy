@@ -105,7 +105,6 @@ namespace symspellcpppy {
         using words_map_t = tsl::array_map<xchar, int64_t>;
         using bigram_map_t = tsl::array_map<xchar, long>;
 
-        int initialCapacity;
         int maxDictionaryEditDistance;
         int prefixLength; //prefix length  5..7
         long countThreshold; //a threshold might be specified, when a term occurs so frequently in the corpus that it is considered a valid word for spelling correction
