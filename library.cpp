@@ -108,7 +108,7 @@ namespace symspellcpppy {
         }
 
         //create deletes
-        auto edits = EditsPrefix(key);
+        auto const edits = EditsPrefix(key);
 
         //store deletes
         for (auto it = edits.cbegin(); it != edits.cend(); ++it) {
@@ -124,7 +124,7 @@ namespace symspellcpppy {
         }
 
         //create deletes
-        auto edits = EditsPrefix(key);
+        auto const edits = EditsPrefix(key);
 
         //stage deletes
         for (auto it = edits.cbegin(); it != edits.cend(); ++it) {
