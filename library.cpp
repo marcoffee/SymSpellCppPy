@@ -553,37 +553,41 @@ namespace symspellcpppy {
         std::vector<SuggestItem> suggestions;     //suggestions for a single term
         std::vector<SuggestItem> suggestionParts; //1 line with separate parts
         auto distanceComparer = EditDistance(distanceAlgorithm);
-
         bool lastCombi = false;
+
         for (int i = 0; i < termList1.size(); i++) {
-            suggestions = Lookup(termList1[i], Top, editDistanceMax);
+            const xstring_view termWord = termList1[i];
+            suggestions = Lookup(termWord, Top, editDistanceMax);
 
             if ((i > 0) && !lastCombi) {
                 std::vector<SuggestItem> suggestionsCombi = Lookup(
-                    Helpers::strings_join(termList1[i - 1], termList1[i]), Top, editDistanceMax
+                    Helpers::strings_join(termList1[i - 1], termWord), Top, editDistanceMax
                 );
 
                 if (!suggestionsCombi.empty()) {
                     SuggestItem& suggested = suggestionsCombi.front();
-                    SuggestItem& best1 = suggestionParts.back();
+                    SuggestItem const& best1 = suggestionParts.back();
                     SuggestItem best2_store;
 
                     if (suggestions.empty()) {
                         best2_store = SuggestItem(
-                            termList1[i], editDistanceMax + 1,
-                            (long) ((double) 10 / pow((double) 10, (double) termList1[i].size())) // 0;
+                            termWord, editDistanceMax + 1,
+                            (long) ((double) 10 / pow((double) 10, (double) termWord.size()))
                         );
                     }
 
                     SuggestItem const& best2 = suggestions.empty() ? best2_store : suggestions[0];
-                    const int distance1 = best1.distance + best2.distance;
+                    const int best_distance_sum = best1.distance + best2.distance;
 
-                    if ((distance1 >= 0) && ((suggested.distance + 1 < distance1) ||
-                                             ((suggested.distance + 1 == distance1) &&
-                                              ((double) suggested.count >
-                                               (double) best1.count / (double) N * (double) best2.count)))) {
+                    if ((best_distance_sum >= 0) && (
+                        (suggested.distance + 1 < best_distance_sum) || (
+                            (suggested.distance + 1 == best_distance_sum) && (
+                                (double) suggested.count > (double) best1.count / (double) N * (double) best2.count
+                            )
+                        )
+                    )) {
                         suggested.distance++;
-                        best1 = std::move(suggested);
+                        suggestionParts.back() = std::move(suggested);
                         lastCombi = true;
                         goto nextTerm;
                     }
@@ -592,7 +596,7 @@ namespace symspellcpppy {
 
             lastCombi = false;
 
-            if ((!suggestions.empty()) && ((suggestions[0].distance == 0) || (termList1[i].size() == 1))) {
+            if ((!suggestions.empty()) && ((suggestions[0].distance == 0) || (termWord.size() == 1))) {
                 suggestionParts.push_back(suggestions[0]);
             } else {
                 SuggestItem suggestionSplitBest;
@@ -600,10 +604,11 @@ namespace symspellcpppy {
                 if (!suggestions.empty())
                     suggestionSplitBest = suggestions[0];
 
-                if (termList1[i].size() > 1) {
-                    for (int j = 1; j < termList1[i].size(); j++) {
-                        const xstring part1 = termList1[i].substr(0, j);
-                        const xstring part2 = termList1[i].substr(j);
+                if (termWord.size() > 1) {
+                    for (int j = 1; j < termWord.size(); j++) {
+                        const xstring_view part1 = termWord.substr(0, j);
+                        const xstring_view part2 = termWord.substr(j);
+
                         std::vector<SuggestItem> suggestions1 = Lookup(part1, Top, editDistanceMax);
 
                         if (!suggestions1.empty()) {
@@ -616,7 +621,7 @@ namespace symspellcpppy {
                                 );
 
                                 const int compared_distance = distanceComparer.Compare(
-                                    termList1[i], suggestionSplit.term, editDistanceMax
+                                    termWord, suggestionSplit.term, editDistanceMax
                                 );
 
                                 const int distance2 = compared_distance < 0 ? editDistanceMax + 1 : compared_distance;
@@ -631,27 +636,34 @@ namespace symspellcpppy {
 
                                 if (bigram_it != bigrams.end()) {
                                     suggestionSplit.count = bigram_it.value();
+
                                     if (!suggestions.empty()) {
-                                        if (Helpers::StringIsUnion(termList1[i], suggestions1[0].term, suggestions2[0].term)) {
-                                            suggestionSplit.count = std::max(suggestionSplit.count,
-                                                                             suggestions[0].count + 2);
-                                        } else if ((suggestions1[0].term == suggestions[0].term) ||
-                                                   (suggestions2[0].term == suggestions[0].term)) {
-                                            suggestionSplit.count = std::max(suggestionSplit.count,
-                                                                             suggestions[0].count + 1);
+                                        if (Helpers::StringIsUnion(termWord, suggestions1[0].term, suggestions2[0].term)) {
+                                            suggestionSplit.count = std::max(
+                                                suggestionSplit.count, suggestions[0].count + 2
+                                            );
+
+                                        } else if (
+                                            (suggestions1[0].term == suggestions[0].term) ||
+                                            (suggestions2[0].term == suggestions[0].term
+                                        )) {
+                                            suggestionSplit.count = std::max(
+                                                suggestionSplit.count, suggestions[0].count + 1
+                                            );
                                         }
-                                    } else if (Helpers::StringIsUnion(termList1[i], suggestions1[0].term, suggestions2[0].term)) {
-                                        suggestionSplit.count = std::max(suggestionSplit.count,
-                                                                         std::max(suggestions1[0].count,
-                                                                                  suggestions2[0].count) +
-                                                                         2);
+
+                                    } else if (Helpers::StringIsUnion(termWord, suggestions1[0].term, suggestions2[0].term)) {
+                                        suggestionSplit.count = std::max(
+                                            suggestionSplit.count,
+                                            std::max(suggestions1[0].count, suggestions2[0].count) + 2
+                                        );
                                     }
 
                                 } else {
-                                    suggestionSplit.count = std::min(bigramCountMin,
-                                                                     (int64_t) ((double) suggestions1[0].count /
-                                                                                (double) N *
-                                                                                (double) suggestions2[0].count));
+                                    suggestionSplit.count = std::min<int64_t>(
+                                        bigramCountMin,
+                                        (double) suggestions1[0].count / (double) N * (double) suggestions2[0].count
+                                    );
                                 }
 
                                 if (suggestionSplitBest.count == 0 ||
@@ -665,16 +677,16 @@ namespace symspellcpppy {
                         suggestionParts.push_back(suggestionSplitBest);
                     } else {
                         suggestionParts.emplace_back(
-                            termList1[i],
+                            termWord,
                             editDistanceMax + 1,
-                            (long) ((double) 10 / pow((double) 10, (double) termList1[i].size()))
+                            (long) ((double) 10 / pow((double) 10, (double) termWord.size()))
                         );
                     }
                 } else {
                     suggestionParts.emplace_back(
-                        termList1[i],
+                        termWord,
                         editDistanceMax + 1,
-                        (long) ((double) 10 / pow((double) 10, (double) termList1[i].size()))
+                        (long) ((double) 10 / pow((double) 10, (double) termWord.size()))
                     );
                 }
             }
