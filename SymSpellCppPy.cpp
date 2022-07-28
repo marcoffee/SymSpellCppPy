@@ -190,7 +190,7 @@ PYBIND11_MODULE(SymSpellCppPy, m) {
                  py::arg("input"),
                  py::arg("max_edit_distance"),
                  py::arg("max_segmentation_word_length"))
-            .def("save_pickle", [](symspellcpppy::SymSpell &sym, const std::string &filepath) {
+            .def("save_pickle", [](const symspellcpppy::SymSpell &sym, const std::string &filepath) {
                      std::ofstream binary_path(filepath, std::ios::out | std::ios::app | std::ios::binary);
                      if (binary_path.is_open()) {
                          cereal::BinaryOutputArchive ar(binary_path);
@@ -210,7 +210,7 @@ PYBIND11_MODULE(SymSpellCppPy, m) {
                      }
                  }, "Load internal representation from file",
                  py::arg("filepath"))
-            .def("save_pickle_bytes", [](symspellcpppy::SymSpell &sym) {
+            .def("save_pickle_bytes", [](const symspellcpppy::SymSpell &sym) {
                     std::ostringstream binary_stream(std::ios::out | std::ios::binary);
                     cereal::BinaryOutputArchive ar(binary_stream);
                     ar(sym);

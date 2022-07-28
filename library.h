@@ -20,17 +20,18 @@
 #include <locale>
 #include <regex>
 #include <iostream>
-#include "unordered_set"
-#include "include/Defines.h"
-#include "include/Helpers.h"
-#include "include/EditDistance.h"
 #include "cereal/types/unordered_map.hpp"
 #include "cereal/types/string.hpp"
 #include "cereal/types/vector.hpp"
 #include "cereal/types/memory.hpp"
 #include "cereal/archives/binary.hpp"
 #include "cereal/cereal.hpp"
-#include "fstream"
+#include "tsl/array-hash/array_set.h"
+#include "tsl/array-hash/array_map.h"
+#include "tsl/robin-map/robin_map.h"
+#include "include/Defines.h"
+#include "include/Helpers.h"
+#include "include/EditDistance.h"
 
 // SymSpell supports compound splitting / decompounding of multi-word input strings with three cases:
 // 1. mistakenly inserted space into a correct word led to two incorrect terms
@@ -100,9 +101,9 @@ namespace symspellcpppy {
 
     class SymSpell {
     protected:
-        using deletes_map_t = std::unordered_map<int, std::vector<xstring>>;
-        using words_map_t = std::unordered_map<xstring, int64_t>;
-        using bigram_map_t = std::unordered_map<xstring, long>;
+        using deletes_map_t = tsl::robin_map<int, std::vector<xstring>>;
+        using words_map_t = tsl::array_map<xchar, int64_t>;
+        using bigram_map_t = tsl::array_map<xchar, long>;
 
         int initialCapacity;
         int maxDictionaryEditDistance;
@@ -110,7 +111,7 @@ namespace symspellcpppy {
         long countThreshold; //a threshold might be specified, when a term occurs so frequently in the corpus that it is considered a valid word for spelling correction
         int compactMask;
         DistanceAlgorithm distanceAlgorithm = DistanceAlgorithm::DamerauOSADistance;
-        int maxDictionaryWordLength; //maximum std::unordered_map term length
+        int maxDictionaryWordLength; //maximum word length
         deletes_map_t deletes;
         words_map_t words;
         words_map_t belowThresholdWords;
@@ -238,11 +239,11 @@ namespace symspellcpppy {
         static std::vector<xstring> ParseWords(const xstring &text);
 
         void
-        Edits(const xstring &word, int editDistance, std::unordered_set<xstring>& deleteWords) const;
+        Edits(const xstring &word, int editDistance, tsl::array_set<xchar>& deleteWords) const;
 
-        std::unordered_set<xstring> EditsPrefix(const xstring& key) const;
+        tsl::array_set<xchar> EditsPrefix(const xstring& key) const;
 
-        int GetstringHash(const xstring& s) const;
+        int GetstringHash(const xstring_view& s) const;
 
     public:
         //######################
@@ -314,10 +315,35 @@ namespace symspellcpppy {
         /// the Sum of word occurrence probabilities in log scale (a measure of how common and probable the corrected segmentation is).</returns>
         Info WordSegmentation(const xstring &input, int maxEditDistance, int maxSegmentationWordLength) const;
 
+        template<class Archive>
+        void save (Archive &ar) const {
+            auto legacy_deletes = std::make_shared<std::unordered_map<int, std::vector<xstring>>>();
+            std::unordered_map<xstring, int64_t> legacy_words;
+
+            legacy_deletes->reserve(deletes.size());
+
+            for (auto it = deletes.begin(); it != deletes.end(); ++it) {
+                legacy_deletes->emplace_hint(legacy_deletes->end(), it.key(), it.value());
+            }
+
+            legacy_words.reserve(words.size());
+
+            for (auto it = words.begin(); it != words.end(); ++it) {
+                legacy_words.emplace_hint(legacy_words.end(), it.key_sv(), it.value());
+            }
+
+            ar(legacy_deletes, legacy_words, maxDictionaryWordLength);
+        }
 
         template<class Archive>
-        void serialize(Archive &ar) {
-            ar(deletes, words, maxDictionaryWordLength);
+        void load (Archive &ar) {
+            std::shared_ptr<std::unordered_map<int, std::vector<xstring>>> legacy_deletes;
+            std::unordered_map<xstring, int64_t> legacy_words;
+
+            ar(legacy_deletes, legacy_words, maxDictionaryWordLength);
+
+            deletes = deletes_map_t(legacy_deletes->begin(), legacy_deletes->end());
+            words = words_map_t(legacy_words.begin(), legacy_words.end());
         }
     };
 }

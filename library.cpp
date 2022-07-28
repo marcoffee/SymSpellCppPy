@@ -50,7 +50,10 @@ namespace symspellcpppy {
         compactMask = (UINT_MAX >> (3 + _compactLevel)) << 2;
         maxDictionaryWordLength = 0;
 
-        words = words_map_t(initialCapacity);
+        words.max_load_factor(0.9);
+        words.reserve(initialCapacity);
+
+        deletes.max_load_factor(0.9);
     }
 
     bool SymSpell::CreateDictionaryEntryCheck(const xstring &key, int64_t count) {
@@ -59,29 +62,35 @@ namespace symspellcpppy {
                 return false; // no point doing anything if count is zero, as it can't change anything
             count = 0;
         }
-        int countPrevious = -1;
+
         auto belowThresholdWordsFinded = belowThresholdWords.find(key);
-        auto wordsFinded = words.find(key);
+
         if (countThreshold > 1 && belowThresholdWordsFinded != belowThresholdWords.end()) {
-            countPrevious = belowThresholdWordsFinded->second;
+            int64_t& countPrevious = belowThresholdWordsFinded.value();
             count = (MAXINT - countPrevious > count) ? countPrevious + count : MAXINT;
+
             if (count >= countThreshold) {
-                belowThresholdWords.erase(key);
+                belowThresholdWords.erase(belowThresholdWordsFinded);
+
             } else {
+                countPrevious = count;
+                return false;
+            }
+        } else {
+            auto wordsFinded = words.find(key);
+
+            if (wordsFinded != words.end()) {
+                int64_t& countPrevious = wordsFinded.value();
+                countPrevious = (MAXINT - countPrevious > count) ? countPrevious + count : MAXINT;
+                return false;
+
+            } else if (count < CountThreshold()) {
                 belowThresholdWords[key] = count;
                 return false;
             }
-        } else if (wordsFinded != words.end()) {
-            countPrevious = wordsFinded->second;
-            count = (MAXINT - countPrevious > count) ? countPrevious + count : MAXINT;
-            words.at(key) = count;
-            return false;
-        } else if (count < countThreshold) {
-            belowThresholdWords[key] = count;
-            return false;
         }
 
-        words.insert(std::pair<xstring, int64_t>(key, count));
+        words.insert(key, count);
 
         if (key.size() > maxDictionaryWordLength)
             maxDictionaryWordLength = key.size();
@@ -99,7 +108,7 @@ namespace symspellcpppy {
 
         //store deletes
         for (auto it = edits.cbegin(); it != edits.cend(); ++it) {
-            deletes.emplace(GetstringHash(*it), 0).first->second.emplace_back(key);
+            deletes.try_emplace(GetstringHash(it.key_sv()), 0).first.value().emplace_back(key);
         }
 
         return true;
@@ -115,7 +124,7 @@ namespace symspellcpppy {
 
         //stage deletes
         for (auto it = edits.cbegin(); it != edits.cend(); ++it) {
-            staging.Add(GetstringHash(*it), key);
+            staging.Add(GetstringHash(it.key_sv()), key);
         }
 
         return true;
@@ -125,16 +134,16 @@ namespace symspellcpppy {
         auto wordsFinded = words.find(key);
         if (wordsFinded != words.end()) {
             words.erase(wordsFinded);
-            if (wordsFinded->first.size() == maxDictionaryWordLength) {
+            if (wordsFinded.key_size() == maxDictionaryWordLength) {
                 int max_size = 0;
-                for (auto &word: words) {
-                    max_size = std::max(static_cast<int>(word.first.size()), max_size);
+                for (auto it = words.begin(); it != words.end(); ++it) {
+                    max_size = std::max(static_cast<int>(it.key_size()), max_size);
                 }
                 maxDictionaryWordLength = max_size;
             }
             auto edits = EditsPrefix(key);
-            for (const auto &edit: edits) {
-                int deleteHash = GetstringHash(edit);
+            for (auto it = edits.begin(); it != edits.end(); ++it) {
+                int deleteHash = GetstringHash(it.key_sv());
                 auto deletesFinded = deletes.find(deleteHash);
                 if (deletesFinded != deletes.end()) {
                     auto delete_vec = deletesFinded->second;
@@ -186,8 +195,8 @@ namespace symspellcpppy {
                 key = line;
                 count = 1;
             }
-            std::pair<xstring, int64_t> element(key, count);
-            bigrams.insert(element);
+
+            bigrams.emplace(key, count);
             if (count < bigramCountMin) bigramCountMin = count;
         }
 
@@ -275,6 +284,7 @@ namespace symspellcpppy {
     void SymSpell::CommitStaged(SuggestionStage &staging) {
         if (deletes.empty())
             deletes.reserve(staging.DeleteCount());
+
         staging.CommitTo(deletes);
     }
 
@@ -320,8 +330,8 @@ namespace symspellcpppy {
         if (maxEditDistance == 0) skip = 1;
 
         if (!skip) {
-            std::unordered_set<xstring> hashset1;
-            std::unordered_set<xstring> hashset2;
+            tsl::array_set<xchar> hashset1;
+            tsl::array_set<xchar> hashset2;
             hashset2.insert(input);
 
             int maxEditDistance2 = maxEditDistance;
@@ -348,9 +358,9 @@ namespace symspellcpppy {
 
                 const auto deletes_found = deletes.find(GetstringHash(candidate));
 
-                //read candidate entry from std::unordered_map
+                //read candidate entry from deletes' map
                 if (deletes_found != deletes.end()) {
-                    for (const xstring& suggestion : deletes_found->second) {
+                    for (const xstring& suggestion : deletes_found.value()) {
                         const int suggestionLen = suggestion.size();
                         if (suggestion == input) continue;
                         if ((abs(suggestionLen - inputLen) >
@@ -433,7 +443,7 @@ namespace symspellcpppy {
             }//end while
 
             if (suggestions.size() > 1)
-                sort(suggestions.begin(), suggestions.end(), [](SuggestItem &l, SuggestItem &r) {
+                std::sort(suggestions.begin(), suggestions.end(), [](SuggestItem &l, SuggestItem &r) {
                     return l.CompareTo(r) < 0 ? 1 : 0;
                 });
 
@@ -474,7 +484,7 @@ namespace symspellcpppy {
     }
 
     void
-    SymSpell::Edits(const xstring &word, int editDistance, std::unordered_set<xstring>& deleteWords) const {
+    SymSpell::Edits(const xstring &word, int editDistance, tsl::array_set<xchar>& deleteWords) const {
         editDistance++;
 
         if (word.size() > 1) {
@@ -492,8 +502,8 @@ namespace symspellcpppy {
         }
     }
 
-    std::unordered_set<xstring> SymSpell::EditsPrefix(const xstring& key) const {
-        std::unordered_set<xstring> m;
+    tsl::array_set<xchar> SymSpell::EditsPrefix(const xstring& key) const {
+        tsl::array_set<xchar> m;
 
         if (key.size() <= maxDictionaryEditDistance) m.insert(XL(""));
         if (key.size() > prefixLength) {
@@ -507,7 +517,7 @@ namespace symspellcpppy {
         return m;
     }
 
-    int SymSpell::GetstringHash(const xstring& s) const {
+    int SymSpell::GetstringHash(const xstring_view& s) const {
         int len = s.size();
         int lenMask = len;
         if (lenMask > 3) lenMask = 3;
@@ -602,7 +612,7 @@ namespace symspellcpppy {
                                 auto bigram_it = bigrams.find(suggestionSplit.term);
 
                                 if (bigram_it != bigrams.end()) {
-                                    suggestionSplit.count = bigram_it->second;
+                                    suggestionSplit.count = bigram_it.value();
                                     if (!suggestions.empty()) {
                                         if ((suggestions1[0].term + suggestions2[0].term == termList1[i])) {
                                             suggestionSplit.count = std::max(suggestionSplit.count,

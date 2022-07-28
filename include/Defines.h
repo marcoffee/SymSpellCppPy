@@ -14,6 +14,7 @@
 
 #ifdef UNICODE_SUPPORT
 #	define xstring std::wstring
+#	define xstring_view std::wstring_view
 #	define xchar wchar_t
 #	define xifstream std::wifstream
 #	define xstringstream std::wstringstream
@@ -29,6 +30,7 @@
 #   define is_xpunct std::iswpunct
 #else
 #	define xstring std::string
+#	define xstring_view std::string_view
 #	define xchar char
 #	define xifstream std::ifstream
 #	define xstringstream std::stringstream

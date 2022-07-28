@@ -4,10 +4,11 @@
 
 #pragma once
 
-#include <unordered_map>
-#include <utility>
 #include <sys/stat.h>
+#include <type_traits>
+#include <utility>
 #include "iostream"
+#include "tsl/robin-map/robin_map.h"
 #include "Defines.h"
 #define DIFFLIB_ENABLE_EXTERN_MACROS
 #include <difflib.h>
@@ -203,7 +204,7 @@ public:
 
 class SuggestionStage {
 private:
-    std::unordered_map<int, Entry> Deletes;
+    tsl::robin_map<int, Entry> Deletes;
     std::deque<Node> Nodes;
 
 public:
@@ -221,7 +222,7 @@ public:
     }
 
     void Add(int deleteHash, const xstring &suggestion) {
-        Entry& entry = Deletes.emplace(deleteHash, 0).first->second;
+        Entry& entry = Deletes.try_emplace(deleteHash, 0).first.value();
         int const next = entry.first;  // 1st semantic errors, this should not be Nodes.Count
 
         entry.count++;
@@ -230,9 +231,9 @@ public:
         Nodes.emplace_back(suggestion, next);
     }
 
-    void CommitTo(std::unordered_map<int, std::vector<xstring>> &permanentDeletes) const {
+    void CommitTo(tsl::robin_map<int, std::vector<xstring>>& permanentDeletes) const {
         for (auto &Delete : Deletes) {
-            auto& suggestions = permanentDeletes.emplace(Delete.first, 0).first->second;
+            auto& suggestions = permanentDeletes.try_emplace(Delete.first, 0).first.value();
             suggestions.reserve(suggestions.size() + Delete.second.count);
 
             for (int next = Delete.second.first; next >= 0;) {
@@ -253,9 +254,8 @@ public:
 
     SuggestItem() = default;
 
-
-    SuggestItem(xstring term, int distance, int64_t count) {
-        this->term = std::move(term);
+    SuggestItem(const xstring &term, int distance, int64_t count) {
+        this->term = term;
         this->distance = distance;
         this->count = count;
     }
