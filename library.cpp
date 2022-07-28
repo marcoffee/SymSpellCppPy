@@ -396,8 +396,10 @@ namespace symspellcpppy {
                             if (distance > maxEditDistance2 || !flag) continue;
                         } else if ((prefixLength - maxEditDistance == candidateLen)
                                    && (((min_len = std::min(inputLen, suggestionLen) - prefixLength) > 1)
-                                       && (input.substr(inputLen + 1 - min_len) !=
-                                           suggestion.substr(suggestionLen + 1 - min_len)))
+                                       && (input.compare(
+                                            inputLen + 1 - min_len, xstring::npos,
+                                            suggestion, suggestionLen + 1 - min_len, xstring::npos
+                                        ) != 0))
                                    ||
                                    ((min_len > 0) && (input[inputLen - min_len] != suggestion[suggestionLen - min_len])
                                     && ((input[inputLen - min_len - 1] != suggestion[suggestionLen - min_len])
