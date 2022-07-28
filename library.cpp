@@ -23,11 +23,11 @@ namespace symspellcpppy {
         return countThreshold;
     }
 
-    int SymSpell::WordCount() {
+    int SymSpell::WordCount() const {
         return words.size();
     }
 
-    int SymSpell::EntryCount() {
+    int SymSpell::EntryCount() const {
         return deletes.size();
     }
 
@@ -277,21 +277,21 @@ namespace symspellcpppy {
         staging.CommitTo(deletes);
     }
 
-    std::vector<SuggestItem> SymSpell::Lookup(const xstring& input, Verbosity verbosity) {
+    std::vector<SuggestItem> SymSpell::Lookup(const xstring& input, Verbosity verbosity) const {
         return Lookup(input, verbosity, maxDictionaryEditDistance, false, false);
     }
 
-    std::vector<SuggestItem> SymSpell::Lookup(const xstring& input, Verbosity verbosity, int maxEditDistance) {
+    std::vector<SuggestItem> SymSpell::Lookup(const xstring& input, Verbosity verbosity, int maxEditDistance) const {
         return Lookup(input, verbosity, maxEditDistance, false, false);
     }
 
-    std::vector<SuggestItem> SymSpell::Lookup(const xstring& input, Verbosity verbosity, int maxEditDistance, bool includeUnknown) {
+    std::vector<SuggestItem> SymSpell::Lookup(const xstring& input, Verbosity verbosity, int maxEditDistance, bool includeUnknown) const {
         return Lookup(input, verbosity, maxEditDistance, includeUnknown, false);
     }
 
     std::vector<SuggestItem>
     SymSpell::Lookup(const xstring& original_input, Verbosity verbosity, int maxEditDistance, bool includeUnknown,
-                     bool transferCasing) {
+                     bool transferCasing) const {
         if (deletes.empty()) return std::vector<SuggestItem> {}; // Dictionary is empty
 
         int skip = 0;
@@ -306,7 +306,7 @@ namespace symspellcpppy {
         const xstring& input = transferCasing ? lower_input : original_input;
 
         std::vector<SuggestItem> suggestions;
-        int inputLen = input.size();
+        const int inputLen = input.size();
         if (inputLen - maxEditDistance > maxDictionaryWordLength) skip = 1;
 
         int64_t suggestionCount = 0;
@@ -337,20 +337,20 @@ namespace symspellcpppy {
             auto distanceComparer = EditDistance(distanceAlgorithm);
             while (candidatePointer < candidates.size()) {
                 const xstring& candidate = candidates[candidatePointer++];
-                int candidateLen = candidate.size();
-                int lengthDiff = inputPrefixLen - candidateLen;
+                const int candidateLen = candidate.size();
+                const int lengthDiff = inputPrefixLen - candidateLen;
 
                 if (lengthDiff > maxEditDistance2) {
                     if (verbosity == Verbosity::All) continue;
                     break;
                 }
 
-                auto deletes_found = deletes.find(GetstringHash(candidate));
+                const auto deletes_found = deletes.find(GetstringHash(candidate));
 
                 //read candidate entry from std::unordered_map
                 if (deletes_found != deletes.end()) {
                     for (const xstring& suggestion : deletes_found->second) {
-                        int suggestionLen = suggestion.size();
+                        const int suggestionLen = suggestion.size();
                         if (suggestion == input) continue;
                         if ((abs(suggestionLen - inputLen) >
                              maxEditDistance2) // input and sugg lengths diff > allowed/current best distance
@@ -359,7 +359,7 @@ namespace symspellcpppy {
                             || (suggestionLen == candidateLen && suggestion !=
                                                                  candidate)) // if sugg len = delete len, then it either equals delete or is in same bin only because of hash collision
                             continue;
-                        auto suggPrefixLen = std::min(suggestionLen, prefixLength);
+                        const int suggPrefixLen = std::min(suggestionLen, prefixLength);
                         if (suggPrefixLen > inputPrefixLen &&
                             (suggPrefixLen - candidateLen) > maxEditDistance2)
                             continue;
@@ -369,16 +369,16 @@ namespace symspellcpppy {
                         if (candidateLen == 0) {
                             //suggestions which have no common chars with input (inputLen<=maxEditDistance && suggestionLen<=maxEditDistance)
                             distance = std::max(inputLen, suggestionLen);
-                            auto flag = hashset2.insert(suggestion);
-                            if (distance > maxEditDistance2 || !flag.second) continue;
+                            const bool flag = hashset2.insert(suggestion).second;
+                            if (distance > maxEditDistance2 || !flag) continue;
                         } else if (suggestionLen == 1) {
                             if (input.find(suggestion[0]) == xstring::npos)
                                 distance = inputLen;
                             else
                                 distance = inputLen - 1;
 
-                            auto flag = hashset2.insert(suggestion);
-                            if (distance > maxEditDistance2 || !flag.second) continue;
+                            const bool flag = hashset2.insert(suggestion).second;
+                            if (distance > maxEditDistance2 || !flag) continue;
                         } else if ((prefixLength - maxEditDistance == candidateLen)
                                    && (((min_len = std::min(inputLen, suggestionLen) - prefixLength) > 1)
                                        && (input.substr(inputLen + 1 - min_len) !=
@@ -398,7 +398,7 @@ namespace symspellcpppy {
                         }
 
                         if (distance <= maxEditDistance2) {
-                            suggestionCount = words[suggestion];
+                            suggestionCount = words.at(suggestion);
 
                             if (!suggestions.empty()) {
                                 switch (verbosity) {
@@ -478,7 +478,7 @@ namespace symspellcpppy {
     }
 
     void
-    SymSpell::Edits(const xstring &word, int editDistance, std::unordered_set<xstring>& deleteWords) {
+    SymSpell::Edits(const xstring &word, int editDistance, std::unordered_set<xstring>& deleteWords) const {
         editDistance++;
 
         if (word.size() > 1) {
@@ -496,7 +496,7 @@ namespace symspellcpppy {
         }
     }
 
-    std::unordered_set<xstring> SymSpell::EditsPrefix(const xstring& key) {
+    std::unordered_set<xstring> SymSpell::EditsPrefix(const xstring& key) const {
         std::unordered_set<xstring> m;
 
         if (key.size() <= maxDictionaryEditDistance) m.insert(XL(""));
@@ -527,15 +527,15 @@ namespace symspellcpppy {
         return (int) hash;
     }
 
-    std::vector<SuggestItem> SymSpell::LookupCompound(const xstring &input) {
+    std::vector<SuggestItem> SymSpell::LookupCompound(const xstring &input) const {
         return LookupCompound(input, maxDictionaryEditDistance, false);
     }
 
-    std::vector<SuggestItem> SymSpell::LookupCompound(const xstring &input, int editDistanceMax) {
+    std::vector<SuggestItem> SymSpell::LookupCompound(const xstring &input, int editDistanceMax) const {
         return LookupCompound(input, editDistanceMax, false);
     }
 
-    std::vector<SuggestItem> SymSpell::LookupCompound(const xstring &input, int editDistanceMax, bool transferCasing) {
+    std::vector<SuggestItem> SymSpell::LookupCompound(const xstring &input, int editDistanceMax, bool transferCasing) const {
         std::vector<xstring> termList1 = ParseWords(input);
 
         std::vector<SuggestItem> suggestions;     //suggestions for a single term
@@ -584,8 +584,8 @@ namespace symspellcpppy {
 
                 if (termList1[i].size() > 1) {
                     for (int j = 1; j < termList1[i].size(); j++) {
-                        xstring part1 = termList1[i].substr(0, j);
-                        xstring part2 = termList1[i].substr(j);
+                        const xstring part1 = termList1[i].substr(0, j);
+                        const xstring part2 = termList1[i].substr(j);
                         SuggestItem suggestionSplit = SuggestItem();
                         std::vector<SuggestItem> suggestions1 = Lookup(part1, Top, editDistanceMax);
                         if (!suggestions1.empty()) {
@@ -673,15 +673,15 @@ namespace symspellcpppy {
         return suggestionsLine;
     }
 
-    Info SymSpell::WordSegmentation(const xstring &input) {
+    Info SymSpell::WordSegmentation(const xstring &input) const {
         return WordSegmentation(input, MaxDictionaryEditDistance(), maxDictionaryWordLength);
     }
 
-    Info SymSpell::WordSegmentation(const xstring &input, int maxEditDistance) {
+    Info SymSpell::WordSegmentation(const xstring &input, int maxEditDistance) const {
         return WordSegmentation(input, maxEditDistance, maxDictionaryWordLength);
     }
 
-    Info SymSpell::WordSegmentation(const xstring &input, int maxEditDistance, int maxSegmentationWordLength) {
+    Info SymSpell::WordSegmentation(const xstring &input, int maxEditDistance, int maxSegmentationWordLength) const {
         // v6.7
         // normalize ligatures:
         // "scientific"

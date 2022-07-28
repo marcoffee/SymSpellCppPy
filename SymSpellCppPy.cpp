@@ -116,20 +116,20 @@ PYBIND11_MODULE(SymSpellCppPy, m) {
             .def("purge_below_threshold_words", &symspellcpppy::SymSpell::PurgeBelowThresholdWords,
                  "Remove all below threshold words from the dictionary.")
             .def("lookup", py::overload_cast<const xstring &, symspellcpppy::Verbosity>(
-                    &symspellcpppy::SymSpell::Lookup),
+                    &symspellcpppy::SymSpell::Lookup, py::const_),
                  " Find suggested spellings for a given input word, using the maximum\n"
                  "    edit distance specified during construction of the SymSpell dictionary.",
                  py::arg("input"),
                  py::arg("verbosity"))
             .def("lookup", py::overload_cast<const xstring &, symspellcpppy::Verbosity, int>(
-                    &symspellcpppy::SymSpell::Lookup),
+                    &symspellcpppy::SymSpell::Lookup, py::const_),
                  " Find suggested spellings for a given input word, using the maximum\n"
                  "    edit distance provided to the function.",
                  py::arg("input"),
                  py::arg("verbosity"),
                  py::arg("max_edit_distance"))
             .def("lookup", py::overload_cast<const xstring &, symspellcpppy::Verbosity, int, bool>(
-                    &symspellcpppy::SymSpell::Lookup),
+                    &symspellcpppy::SymSpell::Lookup, py::const_),
                  " Find suggested spellings for a given input word, using the maximum\n"
                  "    edit distance provided to the function and include input word in suggestions, if no words within edit distance found.",
                  py::arg("input"),
@@ -137,7 +137,7 @@ PYBIND11_MODULE(SymSpellCppPy, m) {
                  py::arg("max_edit_distance"),
                  py::arg("include_unknown"))
             .def("lookup", py::overload_cast<const xstring &, symspellcpppy::Verbosity, int, bool, bool>(
-                    &symspellcpppy::SymSpell::Lookup),
+                    &symspellcpppy::SymSpell::Lookup, py::const_),
                  " Find suggested spellings for a given input word, using the maximum\n"
                  "    edit distance provided to the function and include input word in suggestions, if no words within edit distance found & preserve transfer casing.",
                  py::arg("input"),
@@ -146,14 +146,14 @@ PYBIND11_MODULE(SymSpellCppPy, m) {
                  py::arg("include_unknown") = false,
                  py::arg("transfer_casing") = false)
             .def("lookup_compound", py::overload_cast<const xstring &>(
-                    &symspellcpppy::SymSpell::LookupCompound),
+                    &symspellcpppy::SymSpell::LookupCompound, py::const_),
                  " LookupCompound supports compound aware automatic spelling correction of multi-word input strings with three cases:\n"
                  "    1. mistakenly inserted space into a correct word led to two incorrect terms \n"
                  "    2. mistakenly omitted space between two correct words led to one incorrect combined term\n"
                  "    3. multiple independent input terms with/without spelling errors",
                  py::arg("input"))
             .def("lookup_compound", py::overload_cast<const xstring &, int>(
-                    &symspellcpppy::SymSpell::LookupCompound),
+                    &symspellcpppy::SymSpell::LookupCompound, py::const_),
                  " LookupCompound supports compound aware automatic spelling correction of multi-word input strings with three cases:\n"
                  "    1. mistakenly inserted space into a correct word led to two incorrect terms \n"
                  "    2. mistakenly omitted space between two correct words led to one incorrect combined term\n"
@@ -161,7 +161,7 @@ PYBIND11_MODULE(SymSpellCppPy, m) {
                  py::arg("input"),
                  py::arg("max_edit_distance"))
             .def("lookup_compound", py::overload_cast<const xstring &, int, bool>(
-                    &symspellcpppy::SymSpell::LookupCompound),
+                    &symspellcpppy::SymSpell::LookupCompound, py::const_),
                  " LookupCompound supports compound aware automatic spelling correction of multi-word input strings with three cases:\n"
                  "    1. mistakenly inserted space into a correct word led to two incorrect terms \n"
                  "    2. mistakenly omitted space between two correct words led to one incorrect combined term\n"
@@ -170,20 +170,20 @@ PYBIND11_MODULE(SymSpellCppPy, m) {
                  py::arg("max_edit_distance"),
                  py::arg("transfer_casing"))
             .def("word_segmentation", py::overload_cast<const xstring &>(
-                    &symspellcpppy::SymSpell::WordSegmentation),
+                    &symspellcpppy::SymSpell::WordSegmentation, py::const_),
                  " WordSegmentation divides a string into words by inserting missing spaces at the appropriate positions\n"
                  "    misspelled words are corrected and do not affect segmentation\n"
                  "    existing spaces are allowed and considered for optimum segmentation",
                  py::arg("input"))
             .def("word_segmentation", py::overload_cast<const xstring &, int>(
-                    &symspellcpppy::SymSpell::WordSegmentation),
+                    &symspellcpppy::SymSpell::WordSegmentation, py::const_),
                  " WordSegmentation divides a string into words by inserting missing spaces at the appropriate positions\n"
                  "    misspelled words are corrected and do not affect segmentation\n"
                  "    existing spaces are allowed and considered for optimum segmentation",
                  py::arg("input"),
                  py::arg("max_edit_distance"))
             .def("word_segmentation", py::overload_cast<const xstring &, int, int>(
-                    &symspellcpppy::SymSpell::WordSegmentation),
+                    &symspellcpppy::SymSpell::WordSegmentation, py::const_),
                  " WordSegmentation divides a string into words by inserting missing spaces at the appropriate positions\n"
                  "    misspelled words are corrected and do not affect segmentation\n"
                  "    existing spaces are allowed and considered for optimum segmentation",

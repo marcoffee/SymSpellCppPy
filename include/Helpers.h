@@ -211,7 +211,7 @@ public:
         Deletes.reserve(initialCapacity);
     }
 
-    int DeleteCount() { return Deletes.size(); }
+    int DeleteCount() const { return Deletes.size(); }
 
     int NodeCount() const { return Nodes.size(); }
 
@@ -230,7 +230,7 @@ public:
         Nodes.emplace_back(suggestion, next);
     }
 
-    void CommitTo(std::unordered_map<int, std::vector<xstring>> &permanentDeletes) {
+    void CommitTo(std::unordered_map<int, std::vector<xstring>> &permanentDeletes) const {
         for (auto &Delete : Deletes) {
             auto& suggestions = permanentDeletes.emplace(Delete.first, 0).first->second;
             suggestions.reserve(suggestions.size() + Delete.second.count);

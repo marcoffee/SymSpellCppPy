@@ -125,9 +125,9 @@ namespace symspellcpppy {
 
         long CountThreshold() const;
 
-        int WordCount();
+        int WordCount() const;
 
-        int EntryCount();
+        int EntryCount() const;
 
         /// <summary>Create a new instanc of SymSpell.</summary>
         /// <remarks>Specifying ann accurate initialCapacity is not essential,
@@ -198,7 +198,7 @@ namespace symspellcpppy {
         /// <param name="verbosity">The value controlling the quantity/closeness of the retuned suggestions.</param>
         /// <returns>A List of SuggestItem object representing suggested correct spellings for the input word,
         /// sorted by edit distance, and secondarily by count frequency.</returns>
-        std::vector<SuggestItem> Lookup(const xstring& input, Verbosity verbosity);
+        std::vector<SuggestItem> Lookup(const xstring& input, Verbosity verbosity) const;
 
         /// <summary>Find suggested spellings for a given input word, using the maximum
         /// edit distance specified during construction of the SymSpell dictionary.</summary>
@@ -207,7 +207,7 @@ namespace symspellcpppy {
         /// <param name="maxEditDistance">The maximum edit distance between input and suggested words.</param>
         /// <returns>A List of SuggestItem object representing suggested correct spellings for the input word,
         /// sorted by edit distance, and secondarily by count frequency.</returns>
-        std::vector<SuggestItem> Lookup(const xstring& input, Verbosity verbosity, int maxEditDistance);
+        std::vector<SuggestItem> Lookup(const xstring& input, Verbosity verbosity, int maxEditDistance) const;
 
         /// <summary>Find suggested spellings for a given input word.</summary>
         /// <param name="input">The word being spell checked.</param>
@@ -216,7 +216,7 @@ namespace symspellcpppy {
         /// <param name="includeUnknown">Include input word in suggestions, if no words within edit distance found.</param>
         /// <returns>A List of SuggestItem object representing suggested correct spellings for the input word,
         /// sorted by edit distance, and secondarily by count frequency.</returns>
-        std::vector<SuggestItem> Lookup(const xstring& input, Verbosity verbosity, int maxEditDistance, bool includeUnknown);
+        std::vector<SuggestItem> Lookup(const xstring& input, Verbosity verbosity, int maxEditDistance, bool includeUnknown) const;
 
         /// <summary>Find suggested spellings for a given input word.</summary>
         /// <param name="input">The word being spell checked.</param>
@@ -226,7 +226,7 @@ namespace symspellcpppy {
         /// <param name="transfer_casing"> Lower case the word or not
         /// <returns>A List of SuggestItem object representing suggested correct spellings for the input word,
         /// sorted by edit distance, and secondarily by count frequency.</returns>
-        std::vector<SuggestItem> Lookup(const xstring& input, Verbosity verbosity, int maxEditDistance, bool includeUnknown, bool transferCasing);
+        std::vector<SuggestItem> Lookup(const xstring& input, Verbosity verbosity, int maxEditDistance, bool includeUnknown, bool transferCasing) const;
 
     private:
         bool
@@ -235,9 +235,9 @@ namespace symspellcpppy {
         static std::vector<xstring> ParseWords(const xstring &text);
 
         void
-        Edits(const xstring &word, int editDistance, std::unordered_set<xstring>& deleteWords);
+        Edits(const xstring &word, int editDistance, std::unordered_set<xstring>& deleteWords) const;
 
-        std::unordered_set<xstring> EditsPrefix(const xstring& key);
+        std::unordered_set<xstring> EditsPrefix(const xstring& key) const;
 
         int GetstringHash(const xstring& s) const;
 
@@ -252,19 +252,19 @@ namespace symspellcpppy {
         /// <summary>Find suggested spellings for a multi-word input string (supports word splitting/merging).</summary>
         /// <param name="input">The string being spell checked.</param>
         /// <returns>A List of SuggestItem object representing suggested correct spellings for the input string.</returns>
-        std::vector<SuggestItem> LookupCompound(const xstring &input);
+        std::vector<SuggestItem> LookupCompound(const xstring &input) const;
 
         /// <summary>Find suggested spellings for a multi-word input string (supports word splitting/merging).</summary>
         /// <param name="input">The string being spell checked.</param>
         /// <param name="maxEditDistance">The maximum edit distance between input and suggested words.</param>
         /// <returns>A List of SuggestItem object representing suggested correct spellings for the input string.</returns>
-        std::vector<SuggestItem> LookupCompound(const xstring &input, int editDistanceMax);
+        std::vector<SuggestItem> LookupCompound(const xstring &input, int editDistanceMax) const;
 
         /// <summary>Find suggested spellings for a multi-word input string (supports word splitting/merging).</summary>
         /// <param name="input">The string being spell checked.</param>
         /// <param name="maxEditDistance">The maximum edit distance between input and suggested words.</param>
         /// <returns>A List of SuggestItem object representing suggested correct spellings for the input string.</returns>
-        std::vector<SuggestItem> LookupCompound(const xstring &input, int editDistanceMax, bool transferCasing);
+        std::vector<SuggestItem> LookupCompound(const xstring &input, int editDistanceMax, bool transferCasing) const;
 
         //######
 
@@ -288,7 +288,7 @@ namespace symspellcpppy {
         /// the word segmented and spelling corrected string,
         /// the Edit distance sum between input string and corrected string,
         /// the Sum of word occurrence probabilities in log scale (a measure of how common and probable the corrected segmentation is).</returns>
-        Info WordSegmentation(const xstring &input);
+        Info WordSegmentation(const xstring &input) const;
 
         /// <summary>Find suggested spellings for a multi-word input string (supports word splitting/merging).</summary>
         /// <param name="input">The string being spell checked.</param>
@@ -298,7 +298,7 @@ namespace symspellcpppy {
         /// the word segmented and spelling corrected string,
         /// the Edit distance sum between input string and corrected string,
         /// the Sum of word occurrence probabilities in log scale (a measure of how common and probable the corrected segmentation is).</returns>
-        Info WordSegmentation(const xstring &input, int maxEditDistance);
+        Info WordSegmentation(const xstring &input, int maxEditDistance) const;
 
         /// <summary>Find suggested spellings for a multi-word input string (supports word splitting/merging).</summary>
         /// <param name="input">The string being spell checked.</param>
@@ -309,7 +309,7 @@ namespace symspellcpppy {
         /// the word segmented and spelling corrected string,
         /// the Edit distance sum between input string and corrected string,
         /// the Sum of word occurrence probabilities in log scale (a measure of how common and probable the corrected segmentation is).</returns>
-        Info WordSegmentation(const xstring &input, int maxEditDistance, int maxSegmentationWordLength);
+        Info WordSegmentation(const xstring &input, int maxEditDistance, int maxSegmentationWordLength) const;
 
 
         template<class Archive>
