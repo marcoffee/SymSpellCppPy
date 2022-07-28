@@ -226,8 +226,7 @@ namespace symspellcpppy {
         SuggestionStage staging(16384);
         xstring line;
         int i = 0;
-        int start, end;
-        start = clock();
+
         while (getline(corpusStream, line)) {
             i++;
             std::vector<xstring> lineParts;
