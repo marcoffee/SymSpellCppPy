@@ -49,7 +49,8 @@ namespace symspellcpppy {
         if (_compactLevel > 16) _compactLevel = 16;
         compactMask = (UINT_MAX >> (3 + _compactLevel)) << 2;
         maxDictionaryWordLength = 0;
-        words = std::unordered_map<xstring, int64_t>(initialCapacity);
+
+        words = words_map_t(initialCapacity);
     }
 
     bool SymSpell::CreateDictionaryEntryCheck(const xstring &key, int64_t count) {

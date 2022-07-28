@@ -101,6 +101,10 @@ namespace symspellcpppy {
 
     class SymSpell {
     protected:
+        using deletes_map_t = std::unordered_map<int, std::vector<xstring>>;
+        using words_map_t = std::unordered_map<xstring, int64_t>;
+        using bigram_map_t = std::unordered_map<xstring, long>;
+
         int initialCapacity;
         int maxDictionaryEditDistance;
         int prefixLength; //prefix length  5..7
@@ -108,15 +112,18 @@ namespace symspellcpppy {
         int compactMask;
         DistanceAlgorithm distanceAlgorithm = DistanceAlgorithm::DamerauOSADistance;
         int maxDictionaryWordLength; //maximum std::unordered_map term length
-        std::unordered_map<int, std::vector<xstring>> deletes;
-        std::unordered_map<xstring, int64_t> words;
-        std::unordered_map<xstring, int64_t> belowThresholdWords;
+        deletes_map_t deletes;
+        words_map_t words;
+        words_map_t belowThresholdWords;
 
         static const xregex wordsRegex;
 
         bool CreateDictionaryEntryCheck(const xstring &key, int64_t count);
 
     public:
+        bigram_map_t bigrams;
+        int64_t bigramCountMin = MAXLONG;
+
         int MaxDictionaryEditDistance() const;
 
         int PrefixLength() const;
@@ -147,9 +154,6 @@ namespace symspellcpppy {
         bool CreateDictionaryEntry(const xstring &key, int64_t count, SuggestionStage &staging);
 
         bool DeleteDictionaryEntry(const xstring &key);
-
-        std::unordered_map<xstring, long> bigrams;
-        int64_t bigramCountMin = MAXLONG;
 
         /// <summary>Load multiple dictionary entries from a file of word/frequency count pairs</summary>
         /// <remarks>Merges with any dictionary data already loaded.</remarks>
