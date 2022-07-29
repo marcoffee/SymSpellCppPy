@@ -190,13 +190,15 @@ PYBIND11_MODULE(SymSpellCppPy, m) {
             .export_values();
 
     py::class_<symspellcpppy::SymSpell>(m, "SymSpell")
-            .def(py::init<int, int, int, int, unsigned char, DistanceAlgorithm>(), "SymSpell builder options",
+            .def(py::init<int, int, int, int, unsigned char, DistanceAlgorithm, double, double>(), "SymSpell builder options",
                  py::arg("max_dictionary_edit_distance") = DEFAULT_MAX_EDIT_DISTANCE,
                  py::arg("prefix_length") = DEFAULT_PREFIX_LENGTH,
                  py::arg("count_threshold") = DEFAULT_COUNT_THRESHOLD,
                  py::arg("initial_capacity") = DEFAULT_INITIAL_CAPACITY,
                  py::arg("compact_level") = DEFAULT_COMPACT_LEVEL,
-                 py::arg("distance_algorithm") = DEFAULT_DISTANCE_ALGORITHM
+                 py::arg("distance_algorithm") = DEFAULT_DISTANCE_ALGORITHM,
+                 py::arg("words_max_load_factor") = DEFAULT_WORDS_MAX_LOAD_FACTOR,
+                 py::arg("deletes_max_load_factor") = DEFAULT_DELETES_MAX_LOAD_FACTOR
             )
             .def(py::self == py::self, "Compare ==")
             .def(py::self != py::self, "Compare !=")
@@ -422,5 +424,7 @@ PYBIND11_MODULE(SymSpellCppPy, m) {
     m.attr("DEFAULT_INITIAL_CAPACITY") = DEFAULT_INITIAL_CAPACITY;
     m.attr("DEFAULT_COMPACT_LEVEL") = DEFAULT_COMPACT_LEVEL;
     m.attr("DEFAULT_DISTANCE_ALGORITHM") = DEFAULT_DISTANCE_ALGORITHM;
+    m.attr("DEFAULT_WORDS_MAX_LOAD_FACTOR") = DEFAULT_WORDS_MAX_LOAD_FACTOR;
+    m.attr("DEFAULT_DELETES_MAX_LOAD_FACTOR") = DEFAULT_DELETES_MAX_LOAD_FACTOR;
     m.attr("DEFAULT_BUFFER_SIZE") = DEFAULT_BUFFER_SIZE;
 }

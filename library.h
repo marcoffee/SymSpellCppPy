@@ -31,6 +31,8 @@ constexpr auto DEFAULT_COUNT_THRESHOLD = 1;
 constexpr auto DEFAULT_INITIAL_CAPACITY = 82765;
 constexpr auto DEFAULT_COMPACT_LEVEL = 5;
 constexpr auto DEFAULT_DISTANCE_ALGORITHM = DistanceAlgorithm::DamerauOSADistance;
+constexpr auto DEFAULT_WORDS_MAX_LOAD_FACTOR = 0.9;
+constexpr auto DEFAULT_DELETES_MAX_LOAD_FACTOR = 0.9;
 constexpr auto MAXINT = LLONG_MAX;
 constexpr auto MAXLONG = MAXINT;
 
@@ -175,7 +177,9 @@ namespace symspellcpppy {
                           int prefixLength = DEFAULT_PREFIX_LENGTH, int countThreshold = DEFAULT_COUNT_THRESHOLD,
                           int initialCapacity = DEFAULT_INITIAL_CAPACITY,
                           unsigned char compactLevel = DEFAULT_COMPACT_LEVEL,
-                          DistanceAlgorithm distanceAlgorithm = DEFAULT_DISTANCE_ALGORITHM);
+                          DistanceAlgorithm distanceAlgorithm = DEFAULT_DISTANCE_ALGORITHM,
+                          double wordsMaxLoadFactor = DEFAULT_WORDS_MAX_LOAD_FACTOR,
+                          double deletesMaxLoadFactor = DEFAULT_DELETES_MAX_LOAD_FACTOR);
 
         bool CreateDictionaryEntry(const xstring_view &key, int64_t count);
         bool CreateDictionaryEntry(const xstring_view &key, int64_t count, SuggestionStage &staging);

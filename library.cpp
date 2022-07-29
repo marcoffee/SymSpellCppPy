@@ -36,7 +36,8 @@ namespace symspellcpppy {
     }
 
     SymSpell::SymSpell(int _maxDictionaryEditDistance, int _prefixLength, int _countThreshold, int _initialCapacity,
-                       unsigned char _compactLevel, DistanceAlgorithm _distanceAlgorithm) :
+                       unsigned char _compactLevel, DistanceAlgorithm _distanceAlgorithm,
+                       double _wordsMaxLoadFactor, double _deletesMaxLoadFactor) :
             maxDictionaryEditDistance(_maxDictionaryEditDistance),
             prefixLength(_prefixLength),
             countThreshold(_countThreshold),
@@ -54,10 +55,10 @@ namespace symspellcpppy {
         compactMask = (UINT_MAX >> (3 + _compactLevel)) << 2;
         maxDictionaryWordLength = 0;
 
-        words.max_load_factor(0.9);
+        words.max_load_factor(_wordsMaxLoadFactor);
         words.reserve(_initialCapacity);
 
-        deletes.max_load_factor(0.9);
+        deletes.max_load_factor(_deletesMaxLoadFactor);
     }
 
     bool SymSpell::CreateDictionaryEntryCheck(const xstring_view &key, int64_t count) {
