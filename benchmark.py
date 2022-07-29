@@ -10,6 +10,28 @@ import pytest
 import os
 
 dict_path = "resources/frequency_dictionary_en_82_765.txt"
+text_dict_path = "tests/fortests/big_modified.txt"
+
+@pytest.mark.benchmark(
+    group="create_dict",
+    min_rounds=5,
+    disable_gc=True,
+    warmup=False
+)
+def test_create_dict_symspellpy(benchmark):
+    sym_spell = SymSpellPy(max_dictionary_edit_distance=2, prefix_length=7)
+    benchmark(sym_spell.create_dictionary, text_dict_path)
+
+
+@pytest.mark.benchmark(
+    group="create_dict",
+    min_rounds=5,
+    disable_gc=True,
+    warmup=False
+)
+def test_create_dict_symspellcpppy(benchmark):
+    sym_spell = SymSpellCpp(max_dictionary_edit_distance=2, prefix_length=7)
+    benchmark(sym_spell.create_dictionary, text_dict_path)
 
 
 @pytest.mark.benchmark(
