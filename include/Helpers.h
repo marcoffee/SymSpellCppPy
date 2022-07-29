@@ -9,6 +9,7 @@
 #include <type_traits>
 #include <utility>
 #include <iostream>
+#include <deque>
 #include "tsl/robin-map/robin_map.h"
 #include "Defines.h"
 
