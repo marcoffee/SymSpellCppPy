@@ -4,13 +4,31 @@
     pytest benchmark.py
 """
 
+import os
+import shutil
+import tempfile
 from symspellpy import SymSpell as SymSpellPy, Verbosity as VerbosityPy
 from SymSpellCppPy import SymSpell as SymSpellCpp, Verbosity as VerbosityCpp
 import pytest
-import os
+
 
 dict_path = "resources/frequency_dictionary_en_82_765.txt"
 text_dict_path = "tests/fortests/big_modified.txt"
+
+temp_dir = tempfile.mkdtemp(dir=os.curdir)
+temp_py_save_pickle = tempfile.mkstemp(dir=temp_dir)
+temp_cpppy_save_pickle = tempfile.mkstemp(dir=temp_dir)
+
+
+@pytest.fixture(scope="session", autouse=True)
+def cleanup_temp_dirs(request):
+    def cleanup():
+        os.close(temp_py_save_pickle[0])
+        os.close(temp_cpppy_save_pickle[0])
+        shutil.rmtree(temp_dir)
+
+    request.addfinalizer(cleanup)
+
 
 @pytest.mark.benchmark(
     group="create_dict",
@@ -161,8 +179,7 @@ def test_save_pickle_symspellpy(benchmark):
 def test_save_pickle_symspellcpppy(benchmark):
     sym_spell = SymSpellCpp(max_dictionary_edit_distance=2, prefix_length=7)
     sym_spell.load_dictionary(dict_path, term_index=0, count_index=1, separator=" ")
-    os.makedirs("temp_cpppy", exist_ok=True)
-    result = benchmark(sym_spell.save_pickle, "temp_cpppy/temp.bin")
+    benchmark(sym_spell.save_pickle, temp_cpppy_save_pickle[1])
     assert (sym_spell.max_length() == 28)
 
 @pytest.mark.benchmark(
@@ -173,9 +190,7 @@ def test_save_pickle_symspellcpppy(benchmark):
 )
 def test_load_pickle_symspellpy(benchmark):
     sym_spell = SymSpellPy(max_dictionary_edit_distance=2, prefix_length=7)
-    benchmark(sym_spell.load_pickle, "temp_py/temp.pk")
-    os.remove("temp_py/temp.pk")
-    os.rmdir("temp_py")
+    benchmark(sym_spell.load_pickle, temp_py_save_pickle[1])
     assert (sym_spell.lookup("tke", VerbosityPy.CLOSEST)[0].term == "the")
 
 @pytest.mark.benchmark(
@@ -186,9 +201,7 @@ def test_load_pickle_symspellpy(benchmark):
 )
 def test_load_pickle_symspellcpppy(benchmark):
     sym_spell = SymSpellCpp(max_dictionary_edit_distance=2, prefix_length=7)
-    benchmark(sym_spell.load_pickle, "temp_cpppy/temp.bin")
-    os.remove("temp_cpppy/temp.bin")
-    os.rmdir("temp_cpppy")
+    benchmark(sym_spell.load_pickle, temp_cpppy_save_pickle[1])
     assert (sym_spell.lookup("tke", VerbosityCpp.CLOSEST)[0].term == "the")
 
 @pytest.mark.benchmark(
