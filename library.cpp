@@ -52,9 +52,21 @@ namespace symspellcpppy {
 
         if (_compactLevel > 16) _compactLevel = 16;
         compactMask = (UINT_MAX >> (3 + _compactLevel)) << 2;
+
         maxDictionaryWordLength = 0;
+        maxDictionaryWordLengthCount = 0;
 
         deletes.max_load_factor(_deletesMaxLoadFactor);
+    }
+
+    void SymSpell::CheckUpdateMaxWordLength(const size_t size) {
+        if (size > maxDictionaryWordLength) {
+            maxDictionaryWordLength = size;
+            maxDictionaryWordLengthCount = 1;
+
+        } else if (size == maxDictionaryWordLength) {
+            ++maxDictionaryWordLengthCount;
+        }
     }
 
     words_it_t SymSpell::CreateDictionaryEntryCheck(const xstring_view &key, int64_t count) {
@@ -91,12 +103,8 @@ namespace symspellcpppy {
             }
         }
 
-        auto it = words.emplace_hint(words.end(), key, count);
-
-        if (key.size() > maxDictionaryWordLength)
-            maxDictionaryWordLength = key.size();
-
-        return it;
+        CheckUpdateMaxWordLength(key.size());
+        return words.emplace_hint(words.end(), key, count);
     }
 
     bool SymSpell::CreateDictionaryEntry(const xstring_view &key, int64_t count) {
@@ -145,11 +153,17 @@ namespace symspellcpppy {
         words.erase(wordsFinded);
 
         if (key.size() == maxDictionaryWordLength) {
-            maxDictionaryWordLength = words.empty() ? 0 : std::max_element(
-                words.begin(), words.end(), [] (words_it_t const& it1, words_it_t const& it2) {
-                    return it1->first.size() < it2->first.size();
+            if (maxDictionaryWordLengthCount > 1) {
+                --maxDictionaryWordLengthCount;
+
+            } else {
+                maxDictionaryWordLength = 0;
+                maxDictionaryWordLengthCount = 0;
+
+                for (const auto &[ word, _ ] : words) {
+                    CheckUpdateMaxWordLength(word.size());
                 }
-            )->first.size();
+            }
         }
 
         auto const edits = EditsPrefix(key);
@@ -916,7 +930,6 @@ namespace symspellcpppy {
         this->bigrams.serialize(ser);
 
         ser.serialize<size_t>(this->compactMask);
-        ser.serialize<size_t>(this->maxDictionaryWordLength);
         ser.serialize<size_t>(this->bigramCountMin);
     }
 
@@ -950,6 +963,9 @@ namespace symspellcpppy {
         for (size_t i = 0; i < words_size; ++i) {
             auto key = dse.deserialize<words_map_t::key_type>();
             auto value = dse.deserialize<words_map_t::mapped_type>();
+            // This must be checked before moving the key to the words map
+            result.CheckUpdateMaxWordLength(key.size());
+
             auto ins_it = result.words.emplace_hint(result.words.end(), std::move(key), std::move(value));
             words_pos.emplace_back(ins_it);
         }
@@ -972,9 +988,7 @@ namespace symspellcpppy {
         }
 
         result.bigrams = bigram_map_t::deserialize(dse, true);
-
         result.compactMask = dse.deserialize<size_t>();
-        result.maxDictionaryWordLength = dse.deserialize<size_t>();
         result.bigramCountMin = dse.deserialize<size_t>();
 
         return result;

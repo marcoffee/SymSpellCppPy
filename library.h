@@ -111,6 +111,7 @@ namespace symspellcpppy {
         int compactMask;
         DistanceAlgorithm distanceAlgorithm;
         int maxDictionaryWordLength; //maximum word length
+        int maxDictionaryWordLengthCount; //number of words with maximum word length
         deletes_map_t deletes;
         words_map_t words;
         words_map_t belowThresholdWords;
@@ -120,6 +121,7 @@ namespace symspellcpppy {
         static const xregex wordsRegex;
         static constexpr std::string_view serializedHeader = "SymSpellCppPy";
 
+        void CheckUpdateMaxWordLength(const size_t size);
         words_it_t CreateDictionaryEntryCheck(const xstring_view &key, int64_t count);
 
     public:
@@ -145,6 +147,7 @@ namespace symspellcpppy {
                 (compactMask == ssp.compactMask) &&
                 (distanceAlgorithm == ssp.distanceAlgorithm) &&
                 (maxDictionaryWordLength == ssp.maxDictionaryWordLength) &&
+                (maxDictionaryWordLengthCount == ssp.maxDictionaryWordLengthCount) &&
                 // There is no need to compare deletes
                 (words == ssp.words) &&
                 (belowThresholdWords == ssp.belowThresholdWords) &&
@@ -489,7 +492,13 @@ namespace symspellcpppy {
 
             ar(legacy_deletes, legacy_words, maxDictionaryWordLength);
 
-            words = words_map_t(legacy_words.begin(), legacy_words.end());
+            words = words_map_t();
+            maxDictionaryWordLengthCount = 0;
+
+            for (const auto &[ word, count ] : legacy_words) {
+                words.emplace_hint(words.end(), word, count);
+                CheckUpdateMaxWordLength(word.size());
+            }
 
             deletes = deletes_map_t();
             deletes.reserve(legacy_deletes->size());
