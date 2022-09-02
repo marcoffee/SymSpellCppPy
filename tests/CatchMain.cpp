@@ -131,8 +131,7 @@ TEST_CASE("Testing English", "[english]") {
     }
 
     SECTION("check custom entry of dictionary") {
-        SymSpell symSpellcustom(maxEditDistance, prefixLength, DEFAULT_COUNT_THRESHOLD, DEFAULT_INITIAL_CAPACITY,
-                                DEFAULT_COMPACT_LEVEL);
+        SymSpell symSpellcustom(maxEditDistance, prefixLength, DEFAULT_COUNT_THRESHOLD, DEFAULT_COMPACT_LEVEL);
         SuggestionStage staging = SuggestionStage(100);
         symSpellcustom.CreateDictionaryEntry(XL("take"), 4, staging);
         symSpellcustom.CommitStaged(staging);
@@ -141,8 +140,7 @@ TEST_CASE("Testing English", "[english]") {
     }
 
     SECTION("check save works fine.") {
-        SymSpell symSpellcustom(maxEditDistance, prefixLength, DEFAULT_COUNT_THRESHOLD, DEFAULT_INITIAL_CAPACITY,
-                                DEFAULT_COMPACT_LEVEL);
+        SymSpell symSpellcustom(maxEditDistance, prefixLength, DEFAULT_COUNT_THRESHOLD, DEFAULT_COMPACT_LEVEL);
         symSpellcustom.LoadDictionary("../resources/frequency_dictionary_en_test_verbosity.txt", 0, 1, XL(' '));
         auto filepath = "../resources/model.bin";
         std::ofstream binary_path(filepath, std::ios::out | std::ios::app | std::ios::binary);

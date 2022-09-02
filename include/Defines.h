@@ -4,6 +4,10 @@
 
 #pragma once
 
+#include "tsl/array-hash/array_set.h"
+#include "tsl/array-hash/array_map.h"
+#include "tsl/robin-map/robin_map.h"
+
 #ifdef _WIN32
 #    ifdef LIBRARY_EXPORTS
 #        define LIBRARY_API __declspec(dllexport)
@@ -42,3 +46,8 @@ using xifstream = std::basic_ifstream<xchar>;
 using xstringstream = std::basic_stringstream<xchar>;
 using xregex = std::basic_regex<xchar>;
 using xsmatch = std::match_results<xchar const*>;
+
+using words_map_t = std::map<xstring, int64_t, std::less<>>;
+using words_it_t = words_map_t::iterator;
+using deletes_map_t = tsl::robin_map<int, std::vector<words_it_t>>;
+using bigram_map_t = tsl::array_map<xchar, long>;

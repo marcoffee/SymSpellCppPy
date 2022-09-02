@@ -25,6 +25,21 @@ template <typename T, typename A>
 struct is_std_vector<std::vector<T, A>> : std::true_type {};
 
 template <typename>
+struct is_std_map : std::false_type {};
+
+template <typename K, typename V, typename C, typename A>
+struct is_std_map<std::map<K, V, C, A>> : std::true_type {};
+
+template <typename>
+struct is_std_unordered_map : std::false_type {};
+
+template <typename K, typename V, typename H, typename P, typename A>
+struct is_std_unordered_map<std::unordered_map<K, V, H, P, A>> : std::true_type {};
+
+template <typename T>
+struct is_std_any_map : std::integral_constant<bool, is_std_map<T>::value || is_std_unordered_map<T>::value> {};
+
+template <typename>
 struct is_std_string : std::false_type {};
 
 template <typename T>
@@ -303,10 +318,10 @@ public:
 
 class Node {
 public:
-    xstring suggestion;
+    words_it_t suggestion;
     int next;
 
-    Node (const xstring_view &suggestion = {}, const int next = -1)
+    Node (const words_it_t &suggestion = {}, const int next = -1)
     : suggestion(suggestion), next(next) {}
 };
 
@@ -338,17 +353,17 @@ public:
         Nodes.clear();
     }
 
-    void Add(int deleteHash, const xstring_view &suggestion) {
+    void Add(int deleteHash, const words_it_t &suggestion_it) {
         Entry& entry = Deletes.try_emplace(deleteHash, 0).first.value();
         int const next = entry.first;  // 1st semantic errors, this should not be Nodes.Count
 
         entry.count++;
         entry.first = Nodes.size();
 
-        Nodes.emplace_back(suggestion, next);
+        Nodes.emplace_back(suggestion_it, next);
     }
 
-    void CommitTo(tsl::robin_map<int, std::vector<xstring>>& permanentDeletes) const {
+    void CommitTo(deletes_map_t& permanentDeletes) const {
         for (auto &Delete : Deletes) {
             auto& suggestions = permanentDeletes.try_emplace(Delete.first, 0).first.value();
             suggestions.reserve(suggestions.size() + Delete.second.count);

@@ -190,15 +190,26 @@ PYBIND11_MODULE(SymSpellCppPy, m) {
             .export_values();
 
     py::class_<symspellcpppy::SymSpell>(m, "SymSpell")
-            .def(py::init<int, int, int, int, unsigned char, DistanceAlgorithm, double, double>(), "SymSpell builder options",
-                 py::arg("max_dictionary_edit_distance") = DEFAULT_MAX_EDIT_DISTANCE,
-                 py::arg("prefix_length") = DEFAULT_PREFIX_LENGTH,
-                 py::arg("count_threshold") = DEFAULT_COUNT_THRESHOLD,
-                 py::arg("initial_capacity") = DEFAULT_INITIAL_CAPACITY,
-                 py::arg("compact_level") = DEFAULT_COMPACT_LEVEL,
-                 py::arg("distance_algorithm") = DEFAULT_DISTANCE_ALGORITHM,
-                 py::arg("words_max_load_factor") = DEFAULT_WORDS_MAX_LOAD_FACTOR,
-                 py::arg("deletes_max_load_factor") = DEFAULT_DELETES_MAX_LOAD_FACTOR
+            .def(py::init<>([] (
+               int maxDictionaryEditDistance, int prefixLength, int countThreshold,
+               int initialCapacity, unsigned char compactLevel,
+               const DistanceAlgorithm &distanceAlgorithm, double deletesMaxLoadFactor
+             ) {
+               return symspellcpppy::SymSpell(
+                    maxDictionaryEditDistance, prefixLength, countThreshold,
+                    compactLevel, distanceAlgorithm, deletesMaxLoadFactor
+               );
+             }),
+
+             "SymSpell builder options",
+
+             py::arg("max_dictionary_edit_distance") = DEFAULT_MAX_EDIT_DISTANCE,
+             py::arg("prefix_length") = DEFAULT_PREFIX_LENGTH,
+             py::arg("count_threshold") = DEFAULT_COUNT_THRESHOLD,
+             py::arg("initial_capacity") = 0,
+             py::arg("compact_level") = DEFAULT_COMPACT_LEVEL,
+             py::arg("distance_algorithm") = DEFAULT_DISTANCE_ALGORITHM,
+             py::arg("deletes_max_load_factor") = DEFAULT_DELETES_MAX_LOAD_FACTOR
             )
             .def(py::self == py::self, "Compare ==")
             .def(py::self != py::self, "Compare !=")
@@ -421,7 +432,6 @@ PYBIND11_MODULE(SymSpellCppPy, m) {
     m.attr("DEFAULT_MAX_EDIT_DISTANCE") = DEFAULT_MAX_EDIT_DISTANCE;
     m.attr("DEFAULT_PREFIX_LENGTH") = DEFAULT_PREFIX_LENGTH;
     m.attr("DEFAULT_COUNT_THRESHOLD") = DEFAULT_COUNT_THRESHOLD;
-    m.attr("DEFAULT_INITIAL_CAPACITY") = DEFAULT_INITIAL_CAPACITY;
     m.attr("DEFAULT_COMPACT_LEVEL") = DEFAULT_COMPACT_LEVEL;
     m.attr("DEFAULT_DISTANCE_ALGORITHM") = DEFAULT_DISTANCE_ALGORITHM;
     m.attr("DEFAULT_WORDS_MAX_LOAD_FACTOR") = DEFAULT_WORDS_MAX_LOAD_FACTOR;

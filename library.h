@@ -2,24 +2,22 @@
 
 //#define UNICODE_SUPPORT
 
-#include <fstream>
-#include <sstream>
-#include <cstring>
-#include <cstdlib>
 #include <algorithm>
 #include <cctype>
+#include <cstdlib>
+#include <cstring>
+#include <fstream>
+#include <iostream>
 #include <locale>
 #include <regex>
-#include <iostream>
+#include <map>
+#include <sstream>
 #include "cereal/types/unordered_map.hpp"
 #include "cereal/types/string.hpp"
 #include "cereal/types/vector.hpp"
 #include "cereal/types/memory.hpp"
 #include "cereal/archives/binary.hpp"
 #include "cereal/cereal.hpp"
-#include "tsl/array-hash/array_set.h"
-#include "tsl/array-hash/array_map.h"
-#include "tsl/robin-map/robin_map.h"
 #include "include/Defines.h"
 #include "include/Helpers.h"
 #include "include/EditDistance.h"
@@ -28,7 +26,6 @@ constexpr auto DEFAULT_SEPARATOR_CHAR = XL(' ');
 constexpr auto DEFAULT_MAX_EDIT_DISTANCE = 2;
 constexpr auto DEFAULT_PREFIX_LENGTH = 7;
 constexpr auto DEFAULT_COUNT_THRESHOLD = 1;
-constexpr auto DEFAULT_INITIAL_CAPACITY = 82765;
 constexpr auto DEFAULT_COMPACT_LEVEL = 5;
 constexpr auto DEFAULT_DISTANCE_ALGORITHM = DistanceAlgorithm::DamerauOSADistance;
 constexpr auto DEFAULT_WORDS_MAX_LOAD_FACTOR = 0.9;
@@ -108,10 +105,6 @@ namespace symspellcpppy {
 
     class SymSpell {
     protected:
-        using deletes_map_t = tsl::robin_map<int, std::vector<xstring>>;
-        using words_map_t = tsl::array_map<xchar, int64_t>;
-        using bigram_map_t = tsl::array_map<xchar, long>;
-
         int maxDictionaryEditDistance;
         int prefixLength; //prefix length  5..7
         long countThreshold; //a threshold might be specified, when a term occurs so frequently in the corpus that it is considered a valid word for spelling correction
@@ -127,7 +120,7 @@ namespace symspellcpppy {
         static const xregex wordsRegex;
         static constexpr std::string_view serializedHeader = "SymSpellCppPy";
 
-        bool CreateDictionaryEntryCheck(const xstring_view &key, int64_t count);
+        words_it_t CreateDictionaryEntryCheck(const xstring_view &key, int64_t count);
 
     public:
         int MaxDictionaryEditDistance() const;
@@ -175,10 +168,8 @@ namespace symspellcpppy {
         /// <param name="compactLevel">Degree of favoring lower memory use over speed (0=fastest,most memory, 16=slowest,least memory).</param>
         explicit SymSpell(int maxDictionaryEditDistance = DEFAULT_MAX_EDIT_DISTANCE,
                           int prefixLength = DEFAULT_PREFIX_LENGTH, int countThreshold = DEFAULT_COUNT_THRESHOLD,
-                          int initialCapacity = DEFAULT_INITIAL_CAPACITY,
                           unsigned char compactLevel = DEFAULT_COMPACT_LEVEL,
                           DistanceAlgorithm distanceAlgorithm = DEFAULT_DISTANCE_ALGORITHM,
-                          double wordsMaxLoadFactor = DEFAULT_WORDS_MAX_LOAD_FACTOR,
                           double deletesMaxLoadFactor = DEFAULT_DELETES_MAX_LOAD_FACTOR);
 
         bool CreateDictionaryEntry(const xstring_view &key, int64_t count);
@@ -371,6 +362,14 @@ namespace symspellcpppy {
                     this->serialize<size_t>(value.size());
                     this->serialize<typename U::value_type>(value.data(), value.size());
 
+                } else if constexpr (is_std_any_map<U>::value) {
+                    this->serialize<size_t>(value.size());
+
+                    for (auto const& it : value) {
+                        this->serialize<typename U::key_type>(it.first);
+                        this->serialize<typename U::mapped_type>(it.second);
+                    }
+
                 } else if constexpr (is_std_pair<U>::value) {
                     this->serialize(value.first);
                     this->serialize(value.second);
@@ -394,13 +393,31 @@ namespace symspellcpppy {
             template <typename U>
             U deserialize (void) {
                 U result{};
+                return this->deserialize<U>(result);
+            }
 
+            template <typename U>
+            U& deserialize (U& result) {
                 if constexpr (std::is_arithmetic_v<U> || std::is_enum_v<U>) {
                     this->data.read(reinterpret_cast<char*>(&result), sizeof(U));
 
                 } else if constexpr (is_std_vector<U>::value || is_std_string<U>::value) {
                     result.resize(this->deserialize<size_t>());
                     this->deserialize<typename U::value_type>(result.data(), result.size());
+
+                } else if constexpr (is_std_any_map<U>::value) {
+                    size_t const size = this->deserialize<size_t>();
+                    result.clear();
+
+                    if constexpr (is_std_unordered_map<U>::value) {
+                        result.reserve(size);
+                    }
+
+                    for (size_t i = 0; i < size; ++i) {
+                        auto key = this->deserialize<typename U::key_type>();
+                        auto value = this->deserialize<typename U::mapped_type>();
+                        result.emplace_hint(result.end(), std::move(key), std::move(value));
+                    }
 
                 } else if constexpr (is_std_pair<U>::value) {
                     result.first = this->deserialize<typeof(result.first)>();
@@ -429,6 +446,9 @@ namespace symspellcpppy {
             U operator() () { return this->deserialize<U>(); }
 
             template <typename U>
+            U& operator() (U& result) { return this->deserialize<U>(result); }
+
+            template <typename U>
             void operator() (U* out, size_t const& size) { this->deserialize<U>(out, size); }
         };
 
@@ -442,14 +462,21 @@ namespace symspellcpppy {
 
             legacy_deletes->reserve(deletes.size());
 
-            for (auto it = deletes.begin(); it != deletes.end(); ++it) {
-                legacy_deletes->emplace_hint(legacy_deletes->end(), it.key(), it.value());
+            for (auto words_it : deletes) {
+                auto ins_it = legacy_deletes->emplace_hint(legacy_deletes->end(), words_it.first, 0);
+                auto& legacy_words_vec = ins_it->second;
+                auto& words_vec = words_it.second;
+                words_vec.reserve(words_vec.size());
+
+                for (auto& word_it : words_vec) {
+                    legacy_words_vec.emplace_back(word_it->first);
+                }
             }
 
             legacy_words.reserve(words.size());
 
-            for (auto it = words.begin(); it != words.end(); ++it) {
-                legacy_words.emplace_hint(legacy_words.end(), it.key_sv(), it.value());
+            for (auto const& [ key, value ] : words) {
+                legacy_words.emplace_hint(legacy_words.end(), key, value);
             }
 
             ar(legacy_deletes, legacy_words, maxDictionaryWordLength);
@@ -462,8 +489,20 @@ namespace symspellcpppy {
 
             ar(legacy_deletes, legacy_words, maxDictionaryWordLength);
 
-            deletes = deletes_map_t(legacy_deletes->begin(), legacy_deletes->end());
             words = words_map_t(legacy_words.begin(), legacy_words.end());
+
+            deletes = deletes_map_t();
+            deletes.reserve(legacy_deletes->size());
+
+            for (auto const& [ key, legacy_words_vec ] : *legacy_deletes) {
+                auto ins_it = deletes.emplace_hint(deletes.end(), key, 0);
+                auto& words_vec = ins_it.value();
+                words_vec.reserve(legacy_words_vec.size());
+
+                for (auto const& word : legacy_words_vec) {
+                    words_vec.emplace_back(words.find(word));
+                }
+            }
         }
     };
 }

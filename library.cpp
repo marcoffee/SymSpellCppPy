@@ -35,14 +35,13 @@ namespace symspellcpppy {
         return deletes.size();
     }
 
-    SymSpell::SymSpell(int _maxDictionaryEditDistance, int _prefixLength, int _countThreshold, int _initialCapacity,
+    SymSpell::SymSpell(int _maxDictionaryEditDistance, int _prefixLength, int _countThreshold,
                        unsigned char _compactLevel, DistanceAlgorithm _distanceAlgorithm,
-                       double _wordsMaxLoadFactor, double _deletesMaxLoadFactor) :
+                       double _deletesMaxLoadFactor) :
             maxDictionaryEditDistance(_maxDictionaryEditDistance),
             prefixLength(_prefixLength),
             countThreshold(_countThreshold),
             distanceAlgorithm(_distanceAlgorithm) {
-        if (_initialCapacity < 0) throw std::invalid_argument("initial_capacity is too small.");
         if (_maxDictionaryEditDistance < 0)
             throw std::invalid_argument("max_dictionary_edit_distance cannot be negative");
         if (_prefixLength < 1 || _prefixLength <= _maxDictionaryEditDistance)
@@ -55,23 +54,20 @@ namespace symspellcpppy {
         compactMask = (UINT_MAX >> (3 + _compactLevel)) << 2;
         maxDictionaryWordLength = 0;
 
-        words.max_load_factor(_wordsMaxLoadFactor);
-        words.reserve(_initialCapacity);
-
         deletes.max_load_factor(_deletesMaxLoadFactor);
     }
 
-    bool SymSpell::CreateDictionaryEntryCheck(const xstring_view &key, int64_t count) {
+    words_it_t SymSpell::CreateDictionaryEntryCheck(const xstring_view &key, int64_t count) {
         if (count <= 0) {
             if (countThreshold > 0)
-                return false; // no point doing anything if count is zero, as it can't change anything
+                return words.end(); // no point doing anything if count is zero, as it can't change anything
             count = 0;
         }
 
         auto belowThresholdWordsFinded = belowThresholdWords.find(key);
 
         if (countThreshold > 1 && belowThresholdWordsFinded != belowThresholdWords.end()) {
-            int64_t& countPrevious = belowThresholdWordsFinded.value();
+            int64_t& countPrevious = belowThresholdWordsFinded->second;
             count = (MAXINT - countPrevious > count) ? countPrevious + count : MAXINT;
 
             if (count >= countThreshold) {
@@ -79,32 +75,34 @@ namespace symspellcpppy {
 
             } else {
                 countPrevious = count;
-                return false;
+                return words.end();
             }
         } else {
             auto wordsFinded = words.find(key);
 
             if (wordsFinded != words.end()) {
-                int64_t& countPrevious = wordsFinded.value();
+                int64_t& countPrevious = wordsFinded->second;
                 countPrevious = (MAXINT - countPrevious > count) ? countPrevious + count : MAXINT;
-                return false;
+                return words.end();
 
             } else if (count < CountThreshold()) {
-                belowThresholdWords[key] = count;
-                return false;
+                belowThresholdWords.emplace(key, count);
+                return words.end();
             }
         }
 
-        words.insert(key, count);
+        auto it = words.emplace_hint(words.end(), key, count);
 
         if (key.size() > maxDictionaryWordLength)
             maxDictionaryWordLength = key.size();
 
-        return true;
+        return it;
     }
 
     bool SymSpell::CreateDictionaryEntry(const xstring_view &key, int64_t count) {
-        if (!CreateDictionaryEntryCheck(key, count)) {
+        auto ins_it = CreateDictionaryEntryCheck(key, count);
+
+        if (ins_it == words.end()) {
             return false;
         }
 
@@ -113,14 +111,16 @@ namespace symspellcpppy {
 
         //store deletes
         for (auto it = edits.cbegin(); it != edits.cend(); ++it) {
-            deletes.try_emplace(GetstringHash(it.key_sv()), 0).first.value().emplace_back(key);
+            deletes.try_emplace(GetstringHash(it.key_sv()), 0).first.value().emplace_back(ins_it);
         }
 
         return true;
     }
 
     bool SymSpell::CreateDictionaryEntry(const xstring_view &key, int64_t count, SuggestionStage &staging) {
-        if (!CreateDictionaryEntryCheck(key, count)) {
+        auto ins_it = CreateDictionaryEntryCheck(key, count);
+
+        if (ins_it == words.end()) {
             return false;
         }
 
@@ -129,7 +129,7 @@ namespace symspellcpppy {
 
         //stage deletes
         for (auto it = edits.cbegin(); it != edits.cend(); ++it) {
-            staging.Add(GetstringHash(it.key_sv()), key);
+            staging.Add(GetstringHash(it.key_sv()), ins_it);
         }
 
         return true;
@@ -145,11 +145,11 @@ namespace symspellcpppy {
         words.erase(wordsFinded);
 
         if (key.size() == maxDictionaryWordLength) {
-            maxDictionaryWordLength = 0;
-
-            for (auto it = words.cbegin(); it != words.cend(); ++it) {
-                maxDictionaryWordLength = std::max<int>(it.key_size(), maxDictionaryWordLength);
-            }
+            maxDictionaryWordLength = words.empty() ? 0 : std::max_element(
+                words.begin(), words.end(), [] (words_it_t const& it1, words_it_t const& it2) {
+                    return it1->first.size() < it2->first.size();
+                }
+            )->first.size();
         }
 
         auto const edits = EditsPrefix(key);
@@ -162,17 +162,11 @@ namespace symspellcpppy {
             }
 
             auto& delete_vec = deletesFinded.value();
-            auto del_it = std::find(delete_vec.begin(), delete_vec.end(), key);
 
-            if (del_it != delete_vec.end()) {
-                auto last_it = delete_vec.end() - 1;
-
-                if (del_it != last_it) {
-                    *del_it = std::move(*last_it);
-                }
-
-                delete_vec.pop_back();
-            }
+            delete_vec.erase(
+                std::remove(delete_vec.begin(), delete_vec.end(), wordsFinded),
+                delete_vec.end()
+            );
 
             if (delete_vec.empty()) {
                 deletes.erase(deletesFinded);
@@ -347,7 +341,6 @@ namespace symspellcpppy {
                      bool transferCasing) const {
         if (deletes.empty()) return std::vector<SuggestItem> {}; // Dictionary is empty
 
-        int skip = 0;
         if (maxEditDistance > maxDictionaryEditDistance) throw std::invalid_argument("Distance too large");
 
         xstring lower_input;
@@ -360,16 +353,21 @@ namespace symspellcpppy {
 
         std::vector<SuggestItem> suggestions;
         const int inputLen = input.size();
-        if (inputLen - maxEditDistance > maxDictionaryWordLength) skip = 1;
+        bool skip = (inputLen - maxEditDistance) > maxDictionaryWordLength;
 
         int64_t suggestionCount = 0;
-        if (words.count(input) && !skip) {
-            suggestionCount = words.at(input);
-            suggestions.emplace_back(transferCasing ? original_input : input, 0, suggestionCount);
-            if (verbosity != All) skip = 1;
+
+        if (!skip) {
+            auto wordsFinded = words.find(input);
+
+            if (wordsFinded != words.end()) {
+                suggestionCount = wordsFinded->second;
+                suggestions.emplace_back(transferCasing ? original_input : input, 0, suggestionCount);
+                if (verbosity != All) skip = true;
+            }
         }
 
-        if (maxEditDistance == 0) skip = 1;
+        if (maxEditDistance == 0) skip = true;
 
         if (!skip) {
             tsl::array_set<xchar> hashset1;
@@ -404,7 +402,8 @@ namespace symspellcpppy {
 
                 //read candidate entry from deletes' map
                 if (deletes_found != deletes.end()) {
-                    for (const xstring& suggestion : deletes_found.value()) {
+                    for (const words_it_t& suggestion_it : deletes_found.value()) {
+                        const xstring& suggestion = suggestion_it->first;
                         const int suggestionLen = suggestion.size();
                         if (suggestion == input) continue;
                         if ((abs(suggestionLen - inputLen) >
@@ -888,9 +887,32 @@ namespace symspellcpppy {
         ser.serialize<size_t>(this->countThreshold);
         ser.serialize<DistanceAlgorithm>(this->distanceAlgorithm);
 
-        this->deletes.serialize(ser);
-        this->words.serialize(ser);
-        this->belowThresholdWords.serialize(ser);
+        ser.serialize<words_map_t>(this->belowThresholdWords);
+        ser.serialize<size_t>(this->words.size());
+
+        size_t word_pos = 0;
+        tsl::robin_map<xchar const*, size_t> words_pos;
+        words_pos.reserve(this->words.size());
+
+        for (auto it = this->words.begin(); it != this->words.end(); ++it) {
+            ser.serialize<words_map_t::key_type>(it->first);
+            ser.serialize<words_map_t::mapped_type>(it->second);
+            words_pos.emplace_hint(words_pos.end(), it->first.data(), word_pos++);
+        }
+
+        ser.serialize<size_t>(this->deletes.size());
+        ser.serialize<double>(this->deletes.max_load_factor());
+
+        for (auto it = this->deletes.begin(); it != this->deletes.end(); ++it) {
+            auto& deletes_vec = it.value();
+            ser.serialize<deletes_map_t::key_type>(it.key());
+            ser.serialize<size_t>(deletes_vec.size());
+
+            for (auto& words_it : deletes_vec) {
+                ser.serialize<size_t>(words_pos.at(words_it->first.data()));
+            }
+        }
+
         this->bigrams.serialize(ser);
 
         ser.serialize<size_t>(this->compactMask);
@@ -917,11 +939,38 @@ namespace symspellcpppy {
         size_t const count_threshold = dse.deserialize<size_t>();
         DistanceAlgorithm const dist_algo = dse.deserialize<DistanceAlgorithm>();
 
-        SymSpell result(max_dist, prefix_length, count_threshold, 0, 0, dist_algo);
+        SymSpell result(max_dist, prefix_length, count_threshold, 0, dist_algo);
 
-        result.deletes = deletes_map_t::deserialize(dse, true);
-        result.words = words_map_t::deserialize(dse, true);
-        result.belowThresholdWords = words_map_t::deserialize(dse, true);
+        dse.deserialize<words_map_t>(result.belowThresholdWords);
+        size_t const words_size = dse.deserialize<size_t>();
+
+        std::vector<words_it_t> words_pos;
+        words_pos.reserve(words_size);
+
+        for (size_t i = 0; i < words_size; ++i) {
+            auto key = dse.deserialize<words_map_t::key_type>();
+            auto value = dse.deserialize<words_map_t::mapped_type>();
+            auto ins_it = result.words.emplace_hint(result.words.end(), std::move(key), std::move(value));
+            words_pos.emplace_back(ins_it);
+        }
+
+        size_t const deletes_size = dse.deserialize<size_t>();
+        double const deletes_ml = dse.deserialize<double>();
+
+        result.deletes.max_load_factor(deletes_ml);
+        result.deletes.reserve(deletes_size);
+
+        for (size_t i = 0; i < deletes_size; ++i) {
+            auto key = dse.deserialize<deletes_map_t::key_type>();
+            auto const vec_size = dse.deserialize<size_t>();
+            auto& value = result.deletes.emplace_hint(result.deletes.end(), std::move(key), 0).value();
+            value.reserve(vec_size);
+
+            for (size_t j = 0; j < vec_size; ++j) {
+                value.emplace_back(words_pos[dse.deserialize<size_t>()]);
+            }
+        }
+
         result.bigrams = bigram_map_t::deserialize(dse, true);
 
         result.compactMask = dse.deserialize<size_t>();
